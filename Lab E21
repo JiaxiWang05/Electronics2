@@ -1,0 +1,27 @@
+// Pin assignments for Wheatstone Bridge output
+const int bridgeOutputPin1 = A0; // Point A of the Wheatstone Bridge
+const int bridgeOutputPin2 = A1; // Point B of the Wheatstone Bridge
+
+void setup() {
+  Serial.begin(9600); // Start serial communication at 9600 bps
+}
+
+void loop() {
+  // Read analog values from the Wheatstone Bridge points
+  int sensorValueA = analogRead(bridgeOutputPin1);
+  int sensorValueB = analogRead(bridgeOutputPin2);
+
+  // Convert the analog readings to voltage
+  float voltageA = sensorValueA * (5.0 / 1023.0); // Convert A0 reading to voltage
+  float voltageB = sensorValueB * (5.0 / 1023.0); // Convert A1 reading to voltage
+
+  // Calculate the differential voltage output of the bridge
+  float voltageDifference = voltageA - voltageB;
+
+  // Output the differential voltage to the Serial Monitor
+  Serial.print("Voltage Difference (V_out): ");
+  Serial.print(voltageDifference, 4); // Print with 4 decimal places for accuracy
+  Serial.println(" V");
+
+  delay(1000); // Delay for 1 second between readings
+}
