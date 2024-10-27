@@ -1,0 +1,35 @@
+const int bridgeOutputPin1 = A0; // Point A of the Wheatstone Bridge
+const int bridgeOutputPin2 = A1; // Point B of the Wheatstone Bridge
+float emaVoltage = 0.0;
+const float alpha = 0.1; // Smoothing factor for EMA
+
+void setup() {
+  Serial.begin(9600);
+  emaVoltage = 0.0; // Initialize EMA to zero
+}
+
+void loop() {
+  // Measure and average readings
+  float voltageA = getAverageReading(bridgeOutputPin1, 10); // Average of 10 samples
+  float voltageB = getAverageReading(bridgeOutputPin2, 10); // Average of 10 samples
+  float voltageDifference = voltageA - voltageB;
+
+  // Apply Exponential Moving Average
+  emaVoltage = alpha * voltageDifference + (1 - alpha) * emaVoltage;
+
+  // Display the stabilized reading
+  Serial.print("Stabilized Voltage Difference (V_out): ");
+  Serial.print(emaVoltage, 4); // 4 decimal places
+  Serial.println(" V");
+
+  delay(1000);
+}
+
+float getAverageReading(int pin, int samples) {
+  long sum = 0;
+  for (int i = 0; i < samples; i++) {
+    sum += analogRead(pin);
+    delay(5);
+  }
+  return sum / samples * (5.0 / 1023.0); // Convert to voltage
+}
