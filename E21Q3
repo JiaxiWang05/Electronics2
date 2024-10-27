@@ -1,1 +1,38 @@
+// Pin assignments for Wheatstone Bridge output
+const int bridgeOutputPin1 = A0; // Point A of the Wheatstone Bridge
+const int bridgeOutputPin2 = A1; // Point B of the Wheatstone Bridge
+
+// RTD and bridge configuration constants
+const float referenceResistance = 100.0; // 100 ohms at 0°C for Pt100 RTD
+const float tempCoefficient = 0.385; // Ohms per °C for Pt100
+
+void setup() {
+  Serial.begin(9600); // Start serial communication at 9600 bps
+}
+
+void loop() {
+  // Read analog values from the Wheatstone Bridge points
+  int sensorValueA = analogRead(bridgeOutputPin1);
+  int sensorValueB = analogRead(bridgeOutputPin2);
+
+  // Convert the analog readings to voltage
+  float voltageA = sensorValueA * (5.0 / 1023.0); // Convert A0 reading to voltage
+  float voltageB = sensorValueB * (5.0 / 1023.0); // Convert A1 reading to voltage
+
+  // Calculate the differential voltage output of the bridge
+  float voltageDifference = voltageA - voltageB;
+
+  // Calculate the resistance change in RTD based on voltage difference
+  float rtdResistance = referenceResistance + (voltageDifference * referenceResistance / 5.0); // Assume bridge is balanced at 0°C
+
+  // Calculate the temperature from the RTD resistance
+  float temperature = (rtdResistance - referenceResistance) / tempCoefficient;
+
+  // Output the temperature to the Serial Monitor
+  Serial.print("Temperature: ");
+  Serial.print(temperature, 2); // Print with 2 decimal places for clarity
+  Serial.println(" °C");
+
+  delay(1000); // Delay for 1 second between readings
+}
 
