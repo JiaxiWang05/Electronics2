@@ -1,0 +1,8 @@
+float emaVoltage = 0.0;
+const float alpha = 0.1;
+
+float getExponentialMovingAverage(int pin) {
+  float currentVoltage = analogRead(pin) * (5.0 / 1023.0);
+  emaVoltage = (alpha * currentVoltage) + ((1 - alpha) * emaVoltage);
+  return emaVoltage;
+}
