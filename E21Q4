@@ -1,1 +1,16 @@
+float getSupplyVoltage() {
+  long result = 0;
+  // Set analog reference to internal 1.1V
+  analogReference(INTERNAL);
+  delay(10); // Wait for stable reference
+
+  // Measure the 5V supply voltage
+  result = analogRead(A0); // Replace A0 with a stable reference, if available
+  float supplyVoltage = (1.1 * 1023) / result;
+
+  // Return to default reference
+  analogReference(DEFAULT);
+
+  return supplyVoltage;
+}
 
