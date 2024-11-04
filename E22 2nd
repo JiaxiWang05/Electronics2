@@ -1,0 +1,70 @@
+// Pin configuration
+const int potPin = A0;        // Analog pin connected to the potentiometer
+const int motorPWM = 9;       // PWM output pin connected to the H-bridge for motor speed control
+const int motorDir1 = 7;      // Digital pin connected to H-bridge for motor direction control (direction 1)
+const int motorDir2 = 8;      // Digital pin connected to H-bridge for motor direction control (direction 2)
+const int buttonPin = 2;      // Digital pin connected to the push button
+
+// Variables for motor control state
+bool motorDirection = true;   // True means forward, false means reverse
+bool motorRunning = false;    // Indicates if the motor is running or stopped
+
+void setup() {
+    // Set up the pin modes
+    pinMode(motorPWM, OUTPUT);     // Set PWM pin as output
+    pinMode(motorDir1, OUTPUT);    // Set direction control pin 1 as output
+    pinMode(motorDir2, OUTPUT);    // Set direction control pin 2 as output
+    pinMode(buttonPin, INPUT_PULLUP);  // Set button pin as input with an internal pull-up resistor
+
+    // Initialize the serial monitor for debugging
+    Serial.begin(9600);
+
+    // Initial motor state (stopped)
+    analogWrite(motorPWM, 0); // Ensure the motor is not running at the start
+}
+
+void loop() {
+    // Read the potentiometer value to determine motor speed
+    int potValue = analogRead(potPin); // Read the raw value (0 to 1023)
+    int motorSpeed = map(potValue, 0, 1023, 0, 255); // Map the raw value to PWM range (0 to 255)
+
+    // Print the potentiometer and mapped speed values for debugging
+    Serial.print("Potentiometer Value: ");
+    Serial.println(potValue);
+    Serial.print("Mapped Speed (PWM): ");
+    Serial.println(motorSpeed);
+
+    // Check the button state (pressed when LOW due to internal pull-up)
+    if (digitalRead(buttonPin) == LOW) {
+        delay(200); // Debounce delay to prevent multiple triggers
+        motorRunning = !motorRunning; // Toggle the motor's running state
+        motorDirection = !motorDirection; // Toggle the motor's direction
+    }
+
+    // Control the motor based on the current state
+    if (motorRunning) {
+        // Set the direction pins based on the motorDirection variable
+        if (motorDirection) {
+            digitalWrite(motorDir1, HIGH);
+            digitalWrite(motorDir2, LOW);
+        } else {
+            digitalWrite(motorDir1, LOW);
+            digitalWrite(motorDir2, HIGH);
+        }
+
+        // Write the PWM value to the motor control pin to set speed
+        analogWrite(motorPWM, motorSpeed);
+    } else {
+        // Stop the motor if motorRunning is false
+        analogWrite(motorPWM, 0);
+    }
+
+    // Print the motor's running state and direction for debugging
+    Serial.print("Motor Running: ");
+    Serial.println(motorRunning ? "Yes" : "No");
+    Serial.print("Motor Direction: ");
+    Serial.println(motorDirection ? "Forward" : "Reverse");
+
+    // Small delay to allow the system to stabilize and reduce noise
+    delay(10);
+}
