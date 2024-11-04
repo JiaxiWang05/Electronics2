@@ -1,0 +1,64 @@
+// Pin configuration
+const int motorPWM = 9;       // PWM output pin connected to the H-bridge for motor speed control
+const int motorDir1 = 7;      // Digital pin for motor direction control (direction 1)
+const int motorDir2 = 8;      // Digital pin for motor direction control (direction 2)
+const int buttonPin = 2;      // Digital pin connected to the push button
+
+// Variables for ramping control
+int motorSpeed = 0;           // Current motor speed (0 to 255)
+const int maxSpeed = 255;     // Maximum speed value for PWM
+const int rampStep = 5;       // Step size for ramping (adjust for smoother or faster ramping)
+const int rampDelay = 50;     // Delay between ramp steps (adjust for ramping speed)
+
+void setup() {
+    // Set up the pin modes
+    pinMode(motorPWM, OUTPUT);     // Set PWM pin as output
+    pinMode(motorDir1, OUTPUT);    // Set direction control pin 1 as output
+    pinMode(motorDir2, OUTPUT);    // Set direction control pin 2 as output
+    pinMode(buttonPin, INPUT_PULLUP);  // Set button pin as input with an internal pull-up resistor
+
+    // Initialize the serial monitor for debugging
+    Serial.begin(9600);
+
+    // Initial motor state (stopped)
+    analogWrite(motorPWM, 0); // Ensure the motor is not running at the start
+}
+
+void loop() {
+    // Check if the button is pressed (LOW when pressed due to internal pull-up)
+    if (digitalRead(buttonPin) == LOW) {
+        // Set the motor direction (e.g., forward)
+        digitalWrite(motorDir1, HIGH);
+        digitalWrite(motorDir2, LOW);
+
+        // Ramp up the motor speed until it reaches the maximum
+        while (motorSpeed < maxSpeed) {
+            motorSpeed += rampStep; // Increase speed by rampStep
+            if (motorSpeed > maxSpeed) motorSpeed = maxSpeed; // Ensure it does not exceed maxSpeed
+            analogWrite(motorPWM, motorSpeed); // Write the PWM value to the motor
+            Serial.print("Ramping up, Speed: ");
+            Serial.println(motorSpeed);
+            delay(rampDelay); // Delay for smooth ramping
+        }
+
+        // Hold at max speed for demonstration
+        delay(2000);
+
+        // Ramp down the motor speed to zero
+        while (motorSpeed > 0) {
+            motorSpeed -= rampStep; // Decrease speed by rampStep
+            if (motorSpeed < 0) motorSpeed = 0; // Ensure it does not go below 0
+            analogWrite(motorPWM, motorSpeed); // Write the PWM value to the motor
+            Serial.print("Ramping down, Speed: ");
+            Serial.println(motorSpeed);
+            delay(rampDelay); // Delay for smooth ramping
+        }
+    } else {
+        // Stop the motor when the button is not pressed
+        analogWrite(motorPWM, 0);
+        Serial.println("Motor is OFF");
+    }
+
+    // Small delay for loop stability
+    delay(10);
+}
