@@ -1,9 +1,14 @@
+#include <math.h> // Include the math library for the sin() function
+
 // Pin configuration
-const int potPin = A0;        // Analog pin connected to the potentiometer
 const int motorPWM = 9;       // PWM output pin connected to the H-bridge for motor speed control
 const int motorDir1 = 7;      // Digital pin for motor direction control (direction 1)
 const int motorDir2 = 8;      // Digital pin for motor direction control (direction 2)
 const int buttonPin = 2;      // Digital pin connected to the push button
+
+// Variables for sine wave generation
+float angle = 0.0;            // Angle for the sine function
+const float increment = 0.1;  // Angle increment for smoother transitions
 
 void setup() {
     // Set up the pin modes
@@ -20,21 +25,25 @@ void setup() {
 }
 
 void loop() {
-    // Read the potentiometer value to determine motor speed
-    int potValue = analogRead(potPin); // Read the raw value (0 to 1023)
-    int motorSpeed = map(potValue, 0, 1023, 0, 255); // Map the raw value to PWM range (0 to 255)
-
     // Check if the button is pressed (LOW when pressed due to internal pull-up)
     if (digitalRead(buttonPin) == LOW) {
         // Set the motor direction (e.g., forward)
         digitalWrite(motorDir1, HIGH);
         digitalWrite(motorDir2, LOW);
 
-        // Write the PWM value to the motor control pin to set speed
-        analogWrite(motorPWM, motorSpeed);
+        // Generate a sine wave pattern for the motor speed
+        int motorSpeed = (sin(angle) * 127.5) + 127.5; // Scale sine (-1 to 1) to (0 to 255)
+        analogWrite(motorPWM, motorSpeed); // Write the PWM value to the motor
 
-        // Print the current motor status for debugging
-        Serial.println("Motor is ON");
+        // Print the current motor status and speed for debugging
+        Serial.print("Motor is ON, Speed: ");
+        Serial.println(motorSpeed);
+
+        // Increment the angle for the next loop iteration
+        angle += increment;
+        if (angle >= 2 * PI) {
+            angle -= 2 * PI; // Keep the angle within 0 to 2*PI range
+        }
     } else {
         // Stop the motor when the button is not pressed
         analogWrite(motorPWM, 0);
@@ -43,6 +52,6 @@ void loop() {
         Serial.println("Motor is OFF");
     }
 
-    // Small delay to allow the system to stabilize
-    delay(10);
+    // Small delay for smoother transitions (adjust as needed)
+    delay(20);
 }
