@@ -1,0 +1,1025 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{siunitx}
+\usepackage{fancyhdr}
+\usepackage{lettrine}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usetikzlibrary{shapes.geometric, arrows}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage[utf8]{inputenc}
+\usepackage{float}
+
+
+
+
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=gray!30]
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=yellow!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+
+
+% Custom header settings
+\pagestyle{fancy} 
+\fancyhf{} % Clear all header and footer fields
+\fancyhead[R]{\thepage} % Page number on the right in the header
+\fancyhead[L]{L2 Circuit Simulation Project} % Custom left-aligned header text
+\fancyfoot{} % Clear footer to remove bottom numbering
+
+
+
+\begin{document}
+\pagenumbering{arabic} % Ensure Arabic numbering starts from the first page
+
+
+\author{Jiaxi Wang, Harun Nuhu-Yakubu & James Robinson}
+
+\title{BJT Amplifier Models: Bridging Theory and Practical Implementation}
+
+\maketitle
+
+\begin{abstract}
+The goal of this work is to design a multi-stage BJT amplifier with emphasis on high-sensitivity applications. Centered on the CE configuration, we tackle challenges in noise, parasitics, efficiency, temperature and distortion. Using LTspice analysis, we evaluate how noise affects low-level signal integrity and how parasitic elements like base resistance and output capacitance impact bandwidth and stability. We also assess efficiency, total harmonic distortion (THD) and  cascading complexities.  
+\end{abstract}
+
+\IEEEpeerreviewmaketitle
+ 
+\section{Introduction}
+\lettrine[lines=3, lhang=0.3, loversize=0.2]{C}E amplifiers, known for their significant voltage gain, are essential when low-noise signal amplification is required, such as biomedical devices \cite{Hosseinzadehlish2023}(e.g. hearing aids and implants), renewable energy systems (e.g., conditioning solar signals and wind energy harbourers), and Internet of Things (IoT) applications (e.g. sensing circuits in traffic monitoring systems). Addressing the complexity of real-life applications requires high level of pre-manufacture analysis using simulation tools, such as LTspice, to ensure the reliability of performance.
+
+Although MOSFETs excel in switching due to high speed and efficiency, they have lower transconductance (how well a device can amplify signals) in low-power applications. BJTs are preferable for the continuous linear amplification desired in audio and RF\cite{OxfordMOSFETvsBJT}. JFETs give high input impedance and perform well in low-noise applications, however they lack the gain of BJTs, so are  less effective in power and noise intensive applications\cite{ReetaMary2024}. The MAT02, a dual matched transistor, is beneficial in these applications due to its exceptional impedance matching characteristics and low noise performance. CE configuration is suitable for a broad range of topologies, single-stage or cascade \cite{SedraSmith2004}. The foundational work for this study incorporates significant previous research, Sahay\cite{Sahay2019} and Kumar details transistor behavior relevant to BJT amplifiers, while Yang et al.\cite{Yang2020} provides simulation methods for analysing multi-stage configurations. Additionally, Saha \cite{Saha2024}  presents advanced transistor modeling methods.
+
+
+
+\maketitle
+
+\section*{Circuit Design and Methodology}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{main/Common_Emitter_Amplifier_Au=20.png}
+    \caption{Common Emitter Amplifier Circuit(Au=20)}
+    \label{fig:Common Emitter amplifier(Au=20)}
+\end{figure}
+
+
+  
+
+
+ 
+
+\subsection*{1. Calculating \( r_{be} \)}
+
+The base-emitter small-signal resistance, \( r_{be} \), represents how much the base-emitter voltage \( V_{BE} \) changes with a change in base current \( I_B \) \cite{transistor_notes2024}. \( r_{be} \) is the dynamic or incremental resistance at the base-emitter junction. 
+ 
+\begin{equation}
+r_{be} = \frac{\partial V_{BE}}{\partial I_B} \approx  200 + (1 + \beta) \frac{V_T}{I_C}
+\label{eq:small_signal_rbe}
+\end{equation} 
+
+
+ In the small-signal analysis\cite{PangLecture6}, the calculations are simplified by concentrating on the small AC signals and ignoring the larger DC bias\cite{VajpeyiLecture}.  This relationship is derived from the Shockley equation:
+\begin{equation}
+I_C = I_S \left( e^{\frac{V_{BE}}{V_T}} - 1 \right)\cite{LeGoff2023}
+\label{eq:shockley}
+\end{equation}
+
+
+When \( V_{BE} \) changes slightly from an operating point, we can expand \( e^{\frac{V_{BE}}{V_T}} \) in a Taylor's series \cite{Pivnev2014}. For small values of \( \Delta V_{BE} \), the exponential behavior of the function can be approximated as linear\cite{LailiLecture}, the higher-order terms in the series become negligible, as is usually expected with Taylors series':
+
+\begin{equation}
+I_C \approx I_C(Q) + \left( \frac{I_S}{V_T} e^{\frac{V_{BE}}{V_T}} \right) \Delta V_{BE}
+\label{eq:linearized_current}  \cite{Shockley1950}
+\end{equation}
+
+
+
+This approximation comes from the exponential dependence of \( I_C \) on \( V_{BE} \) in the Shockley equation, where \( V_T \) (the thermal voltage) represents the change in voltage needed to change the current by a factor of \( e \). The factor \( (1 + \beta) \) reflects the gain of the transistor, showing that as the current gain \( \beta \) increases, \( r_{be} \) also increases.
+
+Given in the MAT02–Specifications \cite{AnalogDevices2004}, \( \beta = 500 \), \( V_T = \SI{26}{\milli\volt} \), and \( I_C = \SI{20}{\milli\ampere} \).
+
+\begin{equation}
+r_{be} = 200 + (1 + 500) \times \frac{26 \times 10^{-3}}{20 \times 10^{-3}} = 851 \, \Omega
+\end{equation}
+
+This value for \( r_{be} \) will effect the magnitude of input signal voltage required to drive the transistor to a specific base current.
+
+
+\subsection*{2. Voltage Gain \( A_v \)}
+
+\( A_v \) of a common-emitter amplifier is given by:
+\begin{equation}
+A_v = \beta \frac{R_3 \parallel R_5}{r_{be}}
+\end{equation}
+
+Given \( A_v = 20 \), \( \beta = 500 \), and \( r_{be} = 851 \, \Omega \), solving for \( R_3 \) gives:
+\[
+R_3 \approx 34.21 \, \Omega
+\]
+
+
+From theoretical calculations we discover that R3 has a value of (34.21$\Omega$) but the actual component has a value of (25$\Omega$), hence requiring us to fine-tune by using altered simulations, sweeping and biasing conditions. \( I_{CQ} \) and gain values were cross-checked with both the MAT02 datasheet and the SPICE model because the SPICE model showed differences in parameters such as \( R_{be} \) compared to datasheet specifications.
+
+To enhance circuit stability \cite{VSSUT} and ensure a more reliable gain predictions,  \( R_3 \) could be increased. The biasing network could be adjusted as a higher \( R_3 \)  reduces the instability with the sensitive \( R_4 \) values \cite{Ben Mabrouk}.
+
+
+ 
+
+
+ {4. Determining \( V_{BQ} \) with Voltage Divider}
+
+The voltage \( V_{BQ} \) is a result of the voltage divider formed by \( R_1 \) and \( R_2 \), shown as:
+
+\begin{equation} 
+V_{BQ} = \frac{R_2}{R_1 + R_2} \times V_{CC}
+\end{equation}
+
+where \( V_{CC} \) is 12 V, and \( V_{BQ} \) is 3 V.
+
+
+The selection of biasing network involves choosing \( R_1 = 10 \, \text{k}\Omega \) and \( R_2 = 30 \, \text{k}\Omega \).  The base voltage \( V_B \) is set and the transistor is placed in its active region to ensure the current is 10–20 times greater in magnitude than \( I_B \). It also prevents loading effects \cite{AnalogDevices}, keeping \( V_B \) stable regardless if variations in \( \beta \). Power conservation is discovered by using high-value resistors to reduce current flow in the divider network. Lower resistor values lead to greater power losses and potential thermal runaway( the illimitable process where the increase in temperature of the system leads to more energy being relased and the temperature increasing further),due to increased \( I_C \) with temperature. This pushes the transistor out of the desired operating region. Standard resistor values like \( 10 \, \text{k}\Omega \) and \( 30 \, \text{k}\Omega \) are part of the E12 and E24 series \cite{ccea_resistors}, making them readily available and allowing the design to be simplified.
+
+
+
+
+
+ 
+
+{5. Calculating \( I_{CQ} \) (or \( I_{EQ} \)) and \( R_4 \)}
+
+\( R_4 \) is designed so that it meets the particular value\( I_{CQ} = 20~\si{\milli\ampere} \). It increases the transistor’s allowance for input signals, allowing it to stay in the active region over a wider bandwidth of input voltages. By preventing the transistor from entering saturation or cutoff, this operating point reduces the risk of nonlinear distortion and improves the accuracy. 
+
+\begin{equation} % 1. Transconductance gm
+g_m = \frac{I_{CQ}}{V_T} \quad \text{(where } V_T \approx 26~\text{mV} \text{)}
+\end{equation} 
+
+
+The measured transconductance (\(g_m\)) of the transistor is 0.385 S, this is a significantly high value under the given operating conditions. This matches the general expectation of typical BJT transconductance values. 
+“are approximately 40 mS for a 1-\(\mu\)A collector current at room temperature\cite{transconductance2024}."
+
+This higher \( I_{CQ} \) also reduces the effects of parasitic capacitances (such as \( C_{bc} \) and \( C_{be} \)), improving the transistor’s response to high-frequency signals. 
+
+
+
+\begin{equation}
+I_{CQ} = I_{EQ} = \frac{V_{BQ} - V_{BEQ}}{R_4}
+\end{equation}
+
+Given:
+\( V_{BEQ} = 0.7 \, \text{V} \),
+ \( I_{CQ} = \SI{20}{\milli\ampere} \),
+\( V_{BQ} = \SI{3}{\volt} \)
+
+ 
+\begin{equation}
+R_4 = \frac{3 - 0.7}{20 \times 10^{-3}} = 115 \, \Omega
+\end{equation}
+
+Selecting \( R_4 = 199 \, \Omega \) proved to be a more effective choice, since it reduces \( I_C \) from 20 mA to 11 mA resulting in a slight decrease in \( g_m \), which is within the recommended limits of safe operating range found in the data booklet.  This prevents overheating or potential damage from extended use. This is because \( A_V \) of a CE amplifier is proportional to the transistor's transconductance \( g_m \), 
+\begin{equation}
+\quad A_V \propto g_m \cite{purdueBJT2024}
+\end{equation}
+
+ 
+In practical applications, preventing an unchecked cycle,where increasing temperature increases current, emphasises temperature is important for reliability. It is suitable for environments with fluctuating conditions and those that require lower power consumption like sound systems. 
+ 
+
+ 
+
+
+
+
+
+\section{Calculation}
+
+
+\subsection{DC simulation and the operating voltages across the
+base (VB), collector (VC) and emitter(VE).}
+\begin{itemize}
+    \item \textbf{Base Voltage (\( V_B \))}: 8.29 V
+    \item \textbf{Collector Voltage (\( V_C \))}: 11.04 V
+    \item \textbf{Emitter Voltage (\( V_E \))}: 7.63V (expected VE =3.7 V)
+
+\end{itemize}
+
+\subsection{Theoretical Calculations}
+
+\paragraph{\( V_E \)}
+With a small emitter resistance of \( 199 \, \Omega \), the high \( V_E \) value suggests that the \( I_E \) must be considerably larger in the simulation than in the theoretical expectations.  
+\begin{equation}
+V_E = I_E \times R_E
+\end{equation}
+
+
+\textbf{Higher Emitter Current}: An elevated \( V_B \) increase \( I_E \)\cite{Hunter}, as \( I_E \) is sensitive to \( V_{BE} \), this would proportionally boost \( I_E \) according to:
+\begin{equation} 
+I_E \approx I_C + I_B \cite{Kumar2024}
+\end{equation} 
+
+ \textbf{Base-Emitter Voltage \( V_{BE} \)}: observed in the simulation close to the typical assumption for silicon transistors. Assuming the base-emitter junction acts like a forward-biased diode, the expected voltage drop \( V_{BE} \approx 0.7 \, \text{V} \) to turn on and start conducting significantly \cite{Carnegie1999}. 
+
+\begin{equation}
+V_{BE} = V_B - V_E = 8.29  \, \text{V} - 7.63 \, \text{V} = 0.66 \, \text{V} \end{equation} 
+
+A positive \( V_{BE} \) as expected for normal operation in an NPN transistor \cite{MITOCW2006}. This bias allows charge carriers (electrons) to overcome the junction's barrier potential, enabling current flow from the emitter to the base.
+
+ 
+\paragraph{ The base-collector voltage}
+\begin{equation}
+V_{BC} = V_B - V_C = 8.29 \, \text{V} - 11.04 \, \text{V} = -2.75 \, \text{V}
+\end{equation} 
+A negative \( V_{BC} \) confirms that the base-collector junction is reverse-biased \cite{Hu2020}, consistent with active-region , where the collector is more positive than the base. This prevents charge carriers from moving from the base to the collector.
+
+
+ \begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth, height=0.15\textheight]{input_output_waveforms.png} % Replace with the actual path to your image
+    \caption{ (\(V_{\text{in}}\)) at Node IN and (\(V_{\text{out}}\)) at Node OUT}
+    \label{fig:input_output_waveforms}
+\end{figure}
+
+
+
+
+
+\section*{Voltage Gain Calculation}
+
+To determine \( A_V \) of the amplifier, a transient analysis was conducted in LTspice with a directive of \texttt{tran 0.01}, allowing observation of both input and output waveforms. 
+
+\begin{itemize}
+    \item Output peak-to-peak voltage, \( V(\text{out}) = 406.82 \, \text{mV} \)
+    \item Input peak-to-peak voltage, \( V(\text{in}) = 19.77 \, \text{mV} \)
+\end{itemize}
+\begin{equation} 
+A_V = \frac{V(\text{out})}{V(\text{in})} = \frac{406.82}{19.77} = 20.57
+\end{equation}
+
+\begin{equation} 
+\text{Gain (dB)} = 20 \times \log_{10}(A_V) \approx 26.3 \, \text{dB}
+\end{equation}
+
+
+\subsection*{Verification of Signal Integrity}
+The input waveform was compared against the output voltage waveform to ensure that the output signal was free from distortion or clipping and remained within the power supply limits. Two corrective steps were considered:
+\begin{enumerate}
+    \item  {Reduction of the Input Signal Amplitude so the output was held within the operational range of the amplifier}
+   
+    \item  {Adjusting Transistor Biasing in case the \(Q\)-point is too close to the supply limits, part of the input signal’s swing may push the output beyond these limits.} 
+    
+
+\end{enumerate}
+ 
+
+% Calculation of Input Impedance (Z_{in}) and Output Impedance (Z_{out})
+
+\section*{Calculation of Input Impedance (\(Z_{\text{in}}\))}
+
+To calculate the input impedance \( Z_{\text{in}} \) of the BJT circuit,   consider the resistors \( R_1 \), \( R_2 \), \( r_{be} \), and \( R_4 \) in parallel:
+
+\begin{equation}
+Z_{\text{in}} = R_1 \parallel R_2 \parallel (r_{be} + \beta R_4) \cite{ElectronicsTutorials2024}
+\end{equation}
+
+\begin{equation}
+Z_{\text{in}} = \frac{1}{\frac{1}{R_1} + \frac{1}{R_2} + \frac{1}{r_{be} + \beta R_4}} \approx 6979.39 \, \Omega
+\end{equation}
+
+Thus, the input impedance \( Z_{\text{in}} \) is approximately \( 6979.39 \, \Omega \).
+
+\section*{Calculation of Output Impedance (\(Z_{\text{out}}\))}
+
+The output impedance of an amplifier is described by the effective impedance seen by the load when observed from the amplifier’s output, with the input signal set to zero to isolate output behavior. For a BJT amplifier, this value is calculated by examining the small-signal equivalent circuit.  
+
+\begin{equation}
+Z_{\text{out}} = \frac{V_{CE}}{I_C}= R_C \parallel R_L \cite{ElectronicsTutorials2024}
+\end{equation}
+
+ 
+
+
+
+\begin{equation}
+Z_{\text{out}} = \frac{1}{\frac{1}{R_C} + \frac{1}{R_L}} = \frac{1}{\frac{1}{25} + \frac{1}{10,500}} \approx 24.94 \, \Omega
+\end{equation}
+
+
+\section*{Importance of Impedance Matching in Real-World}
+
+
+The $Z_{\text{in}}$ of $6979 \, \Omega$ is relatively high, which is advantageous for interfacing with sources such as sensor outputs\cite{WMPhysicsLab}. This high  $Z_{\text{in}}$  minimises the current drawn from the preceding stage, thereby allowing a greater portion of the source voltage to appear across the input terminals.  In \textbf{wireless communication}, (mobile phones and Wi-Fi systems), the antenna must be matched to the impedance of the transmitter and receiver circuits to prevents signal strength degradation.
+
+For \textbf{medical imaging} ultrasound machines, the impedance of the transducer must match that of the human body. If it does not the ultrasound waves would reflect back rather than penetrate the body, preventing proper imaging. Ultrasound gel is applied between the transducer and the skin to bridge the impedance difference\cite{MDPI2024}.
+
+In \textbf{RF applications}, the ideal case $Z_{\text{out}} = Z_{\text{load}}$ ensures maximum power transfer and minimises reflection losses,if they are not equal only a fraction of the power reaches the load, resulting in signal reflections which leads to standing waves and signal cancellations. On the contrary, the $Z_{\text{out}}$ of \(24.94 \, \Omega\) is low, which is particularly beneficial for driving subsequent stages or loads as low $Z_{\text{out}}$ minimises the voltage drop across the amplifier’s output, thereby allowing more of the signal voltage to reach the load. 
+
+
+\section{Characterisation of the Amplifier Circuit for 20 dB Voltage Gain}
+
+\subsection{Parameter Sweep of Load Resistor (R5)}
+
+
+ The step size of 300 \(\Omega\) is small enough to capture subtle variations in gain and stability, yet broad enough to avoid redundancy in output data, capture performance across minimal load, mid-range, and realistic high-impedance load conditions.
+
+
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{varying_resistance.png}
+    \caption{Output voltage waveform of \(\texttt{.step}\) param \( R5 \) from 10 to 20k with 300 steps 
+(.step \, \text{param} \, R5 \, 10 \, 20k \, 300)}
+    \label{fig:output_waveform}
+\end{figure}
+
+
+
+\begin{itemize}
+    \item \textbf{Increasing \( R5 \):} results in a greater voltage drop across the resistor, gain increases as \( R5 \) rises due to a reduced load on the output, allowing for a higher output voltage swing. However, too large a resistor (beyond 40 k\(\Omega\)) push the transistor toward saturation, causing output distortion.
+    \item \textbf{Decreasing \( R5 \):} reduces the gain as the load becomes heavier on the transistor, limiting the output swing. If \( R5 \) drops below 500\(\Omega\), the gain will recuce significantly as the amplifier's output struggles to drive the heavier load.
+\end{itemize}
+
+\subsection*{3. Effect of Bypass Capacitor \( C3 \) on Gain}
+
+
+The impedance of the capacitor decreases with frequency, shorting R4 for AC signals, which increases the voltage gain. For DC, the capacitor behaves as an open circuit, so the DC biasing is determined by R4\cite{SedraSmith2024}.  
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth, height=0.15\textheight]{varying_capacitance_waveform}
+    \caption{Vout of varying the capacitance \texttt{.step param C3 1u 200u 10u}}
+    \label{fig:varying_capacitance_waveform}
+\end{figure}
+\begin{itemize}
+    \item \textbf{Higher \( C3 \) (e.g, 100 µF):} Allows more low frequencies to be bypassed, increasing gain by minimising emitter degeneration due to bypassing of \( r_e \). Observation suggests that at huge values, the effect becomes negligible.
+    \item \textbf{Lower \( C3 \) (e.g, 10 µF):} Leads to a more pronounced high-pass effect, as emitter degeneration is more effective at low frequencies.
+\end{itemize}
+
+
+
+
+
+
+\section{Feedback Network in Amplifiers}
+
+ \textbf{Rf} provides \textbf{DC feedback}, and \textbf{Cf} provides \textbf{AC feedback}. The larger the feedback resistor \( R_f \) (↑), the more signal is fed back to the base, leading to a \textbf{greater reduction in gain} (↓). This negative feedback in system \textbf{linearise the amplifier} by "correcting" the signal, making the output more proportional to the input, reducing harmonic distortion. This results in a cleaner, more accurate amplification of the input signal\cite{AllAboutCircuitsFeedback}.
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Schematic Diagram of the Amplifier Circuit with Feedback Network.png}
+    \caption{Schematic Diagram of the Amplifier Circuit with Feedback Network}
+    \label{fig:schematic}
+\end{figure}
+
+
+MAT02 is a dual matched NPN transistor with exceptionally low offset voltage and low noise\cite{AnalogDevicesMAT02}. \( R_f = 470\text{k}\Omega \) and \( C_f = 10\text{pF} \) would provide mild frequency-dependent feedback, reducing gain at high frequencies. Without feedback, a 1 MHz input signal produce a Total Harmonic Distortion (THD) around 5\% due to the transistor's non-linear behavior. With feedback, the THD can be reduced down to 1\%.
+
+\textbf{DC Isolation for the Feedback Path}
+    
+    The presence of \( C_2 \) allows the feedback network to focus purely on AC feedback effects. The placement of \( R_f \) after \( C_2 \) causes the feedback path to be in isolation from the DC bias of the collector. Since \( R_f \) connects to the base of the transistor, linking it directly to the collector without \( C_2 \) would allow the DC operating point at the collector to influence the base directly. This would disrupt the stable biasing set by \( R_1 \) and \( R_2 \) at the base. With \( C_2 \) in place, \( R_f \) only provides AC feedback to the base, preserving the DC biasing of the transistor.
+ 
+
+
+\section*{1. Feedback Resistor \( R_f = 470\text{k} \Omega\)}
+
+A higher \( R_f \) value means less current flows back into the base, resulting in weaker feedback and thus a smaller reduction in gain.
+Lower values, such as \( 100 \, \text{k}\Omega \), would reduce the gain too much, while higher values, such as \( 1 \, \text{M}\Omega \) have a weak effect. The chosen \( R_f \) value fits well with the amplifier's resistor values, maintaining \( \beta \) for moderate gain control. 
+ 
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth, height=0.14\textheight]{Frequency Response of BJT Amplifier with Negative Feedback Network (Rf-Cf)}
+    \caption{Frequency Response  with Negative Feedback Network (Rf-Cf)}
+    \label{fig:frequency_response}
+\end{figure}
+
+\section{Frequency Response Analysis}
+   
+ 
+
+At low frequency, the feedback effect is small, so the amplifier retains most of its open-loop gain due to the high-pass filtering effect\cite{DoeeetCapacitors}. The gain is significantly weakened because coupling capacitors block DC components and low-frequency signals. Above 100MHz, the gain is increasingly reduced due to feedback, causing a roll-off in high-frequency response. This cutoff frequency is ideal for applications where the amplifier needs to maintain its gain at low and mid frequencies (up to around 20-30kHz in audio or precision signal applications\cite{NCUFeedbackLecture}) but roll off at higher frequencies to limit noise and ensure stability. The 10pF capacitor avoids excessive feedback at frequencies below the cutoff through trial and error.
+
+ 
+
+\begin{itemize}
+    \item \textbf{Gain Plateau}: The frequency response reaches a flat region where the gain stabilizes around 24 dB (the passband),  indicating  from 10 kHz to 50 MHz), the amplifier is effectively amplifying the input signal without significant attenuation or phase distortion. \( R_f \) provides negative feedback to stabilise the DC operating point, reducing variations in gain due to transistor parameter fluctuations. At mid-frequencies, \( C_f \)  starts to act as a bypass around \( R_f \)  to maintain higher gain in this range, as the negative feedback from \( R_f \) alone is partially cancelled.
+\end{itemize}
+
+\subsection{High-Frequency Roll-Off}
+This decline begins around 50 MHz and prominent approaching GHz range. \( C_f \)  now acts as a near-short across \( R_f \), introducing a low-impedance path for higher frequencies. This increases negative feedback. At high frequencies, the internal parasitic capacitances of the MAT-02 transistor contribute to the roll-off by introducing additional poles in the frequency response, compounding the effect of \( C_f \).
+
+
+\subsection{Phase Shift at High Frequencies}
+\begin{itemize}
+    \item  the phase shift moves beyond -360°, indicating multiple phase shifts contributed by each pole introduced by the feedback network and parasitic elements. The network \( (R_f-C_f) \) produces a lead-lag response, exacerbates phase lag at high frequencies. 
+\end{itemize}
+
+
+ 
+
+
+\section*{\textbf{Analysis of Temperature Stability in Common-Emitter Amplifier Circuit}}
+
+The results indicate minimal variation in the bias voltages \( V_b \) (base), \( V_c \) (collector), and \( V_e \) (emitter) across the simulated temperature range from -50°C to 50°C.  The close proximity of traces indicates that the circuit is relatively temperature-stable.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{temperature_stability} % Replace with the actual path
+    \caption{Temperature Variation Effect on Bias Voltages through Sweep Analysis.}
+    \label{fig:temperature_stability}
+\end{figure}
+A stable external 12V supply (VCC) is used, limiting temperature-induced shifts primarily to internal transistor effects.
+
+ 
+ \textbf{Effect of Emitter Degeneration (R4):}
+
+\begin{itemize}
+    \item The \( R_4 = 199 \, \Omega \) counteracts changes in the \( I_C \) due to temperature fluctuations. As temperature increases, the \( V_{BE} \) decreases, which would typically increase \( I_C \). The voltage across \( R_4 \) rises with increased current, reducing the \( V_{BE} \)\cite{ThermalStability}.
+\end{itemize}
+
+
+\textbf{Large Capacitance Values:}
+
+\begin{itemize}
+    \item Large capacitance values (100~\(\mu\)F) enhance stability against high-frequency variations and transient shifts.
+\end{itemize}
+
+
+  
+ 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{AC_response_temp_sweep} % Replace with your actual image filename
+    \caption{Voltage gain of Common-Emitter Amplifier with Temperature Sweep}
+    \label{fig:AC_response_temp_sweep}
+\end{figure}
+
+ 
+
+\subsection*{Voltage Gain Characteristics}
+The graph shows the voltage gain \( \frac{V_{\text{out}}}{V_{\text{in}}} \) plotted in decibels (dB) as a function of frequency. The gain remains relatively stable in the mid-frequency range but decreases sharply at higher frequencies, indicating the cutoff or bandwidth limit. 
+
+
+\subsection*{Observations from the Graph}
+\begin{itemize}
+    \item \textbf{Mid-Frequency Gain}: The solid magenta line indicates a stable gain at mid-frequencies, suggesting minimal temperature effects in this range.
+    \item \textbf{High-Frequency Drop}: The sharp decline in gain at higher frequencies becomes more pronounced as temperature increases, reduced current gain.
+    \item \textbf{Low-Frequency Stability}: The gain is stable again at low frequencies, where temperature effects are less significant due to minimal reactive influences.
+\end{itemize}
+\section*{Importance of Thermal Stability and Compensation Techniques}
+
+\subsection*{Base-Emitter Voltage (\( V_{BE} \))}
+
+\begin{itemize}
+    \item \textbf{Temperature Dependence}: The \( V_{BE} \) typically decreases by approximately 2 mV for each 1°C increase in temperature\cite{TITemperatureCoefficient}.
+    \item \textbf{Explanation}:  As the temperature rises, the intrinsic carrier concentration in silicon increases due to thermal excitation, reducing the energy barrier for carrier movement. This results in a lower \( V_{BE} \) required to forward-bias the junction\cite{ScienceDirectEmitterJunction}.Models such as the Ebers-Moll\cite{OregonStateHSpice} describe the DC behavior of transistors and include temperature-dependent parameters like thermal voltage (\( V_T \)) and saturation current (\( I_S \)).
+\end{itemize}
+
+
+
+\begin{itemize}
+    \item \textbf{Adding \( R_E \) for negative feedback.}
+    \item \textbf{Thermally Stable Components\cite{MetalFilmResistors}}:Metal Film Resistors and Precision Transistors 
+    \item \textbf{Heat Sinks}: Aluminum Heat Sink\cite{BJTHeatSink}
+    \item \textbf{Miller Compensation}: Miller capacitor \cite{MillerLecture} helps manage high-frequency behavior and mitigate phase distortion, which can be worsened by temperature-dependent parasitic effects.
+ 
+\end{itemize}
+ 
+
+
+
+\section{Analysis of Noise Sources and Their Impact on Output Performance}
+\label{sec:noise_analysis}
+
+ 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth, height=0.14\textheight]{Output Noise Voltage Density vs. Frequency for Common-Emitter Amplifier} % Replace with your image file name
+    \caption{Output Noise Voltage Density vs. Frequency for Common-Emitter Amplifier}
+    \label{fig:output_noise}
+\end{figure}
+ 
+
+\textbf{Blue Trace (Output Noise Voltage Density):} Below 100 Hz, the output noise voltage density is low but increases with frequency, peaking between 15 kHz and 5 MHz. Beyond 10 MHz, the noise density decreases, showing a roll-off.
+
+\textbf{Green Trace (Input-Referred Noise):} Represents the noise equivalent at the input that causes the observed output noise.  
+
+
+
+
+\subsection*{Observations from the Graph}
+\begin{itemize}
+    \item \textbf{Low-Frequency Behavior (Below 10 kHz)}:
+    \begin{itemize}
+        \item The input-referred noise \( V_{\text{inoise}} \) is significant at lower frequencies due to flicker noise (1/f noise).
+        \item The output noise \( V_{\text{onoise}} \) is minimal, suggesting reduced amplification or circuit filtering .
+    \end{itemize}
+    
+    \item \textbf{Mid-Frequency Range (10 kHz to 1 MHz)}:
+    \begin{itemize}
+        \item The output noise voltage stabilises, showing that thermal noise \( V_n = \sqrt{4k T R \Delta f} \)\cite{ThermalNoiseEquation}
+ and shot noise\( I_n = \sqrt{2q I_C \Delta f} \) \cite{ShotNoiseEquation} are the main contributors.
+        \item \( V_{\text{onoise}} \) peaks and remains constant, indicating the amplifier's bandwidth and band-limited behavior\cite{Cadence}.
+    \end{itemize}
+
+    \item \textbf{High-Frequency Range (Above 1 MHz)}:
+    \begin{itemize}
+        \item \( V_{\text{inoise}} \) increases, likely due to high-frequency noise components and parasitic effects.
+        \item \( V_{\text{onoise}} \) drops as the frequency surpasses the operational bandwidth of the circuit.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{Impact on Amplifier Performance}
+\begin{itemize}
+    \item \textbf{Signal Masking}: At low signal levels, noise mask the input signal, leading to a reduced SNR.
+    \item \textbf{Dynamic Range Reduction}: Noise limits the effective dynamic range of the  precision amplifier. 
+    \item \textbf{Low-Frequency Performance}: Flicker noise impacts low-frequency signal clarity for audio and sensor. 
+    \item \textbf{Phase Noise and Distortion}: Low-frequency noise cause phase noise, affecting timing and waveform integrity.
+    \item \textbf{High-Frequency Considerations}: Rising input-referred noise at high frequencies indicates parasitic effects.
+\end{itemize}
+
+
+\section*{Frequency Response of the Ideal Amplifier}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth, height=0.14\textheight]{Ideal Amplifier without Parasitics.png}
+    \caption{Frequency response of Ideal amplifier without Parasitics showing the magnitude (solid line) and phase (dotted line) versus frequency. }
+    \label{fig:frequency_response}
+\end{figure}
+
+
+The peak gain observed in the plot is 24 dB. The -3 dB point corresponds to a gain of 24 dB minus 3 dB, which equals 21 dB. The lower 3 dB frequency (\(f_1\)) is 10 kHz. The upper 3 dB frequency (\(f_2\)) is 100 MHz.
+ 
+
+The 3 dB bandwidth \( BW \) is defined as:
+\begin{equation}
+BW = f_2 - f_1 = 100 \text{ MHz} - 10 \text{ kHz} \approx 99.99 \text{ MHz}
+\end{equation}
+
+
+
+\section*{Parasitic Elements}
+
+\begin{enumerate}
+    \item \textbf{Base Resistance \( r_b \)}: inherent resistance in the transistor’s base region. 
+    \item \textbf{Collector Resistance \( r_c \)}:internal resistance in the collector region, cause voltage drops in the output, affecting the linearity, limiting maximum output swing.
+    \item \textbf{Output Capacitance \( C_{out} \)}:  across the collector-emitter junction and has a significant impact on the high-frequency response. As the frequency increases, \( C_{out} \) creates a low-pass filter effect.
+\end{enumerate}
+
+  
+ \begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Impact of Real-World Transistor Parasitics on Common-Emitter Amplifier Performance.png} % Replace with the correct path
+    \caption{Impact of Real-World Transistor Parasitics on Common-Emitter Amplifier Performance}
+    \label{fig:transistor_parasitics}
+\end{figure}
+
+
+
+
+
+\subsection{Design for Non-Ideal Case (Real-World Model)}
+    \begin{itemize}
+        \item \( R_b = 20 \, \Omega \) in series with the base.
+        \item \( R_c = 5 \, \Omega \) in series with the collector.
+        \item \( C_{out} = 5 \, \text{pF} \) between the collector and emitter.
+    \end{itemize}
+ 
+
+The input signal flows from the through C1 and reach the
+base of the transistor. Ideally a voltage drop right at input so
+the base voltage is slightly lower than the voltage on the right
+side of C1\cite {BJTCurrentsVoltages}.  C1 is there to AC couple the input signal to the
+amplifier, blocking any DC component and allowing only AC
+signals to pass. The purpose is to interact only with the AC
+signal (the intended input) without affecting any DC biasing
+from previous stages or the signal source.
+
+
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth, height=0.14\textheight]{real-world transistor model with parasitic.png}
+    \caption{Frequency response of a real-world transistor model with parasitics, illustrating the magnitude (solid line) and phase (dotted line) versus frequency. The plot spans from 1 Hz to 10 GHz, showing the behavior of the transistor with inherent parasitic effects. The response reveals gain reduction at both low and high frequencies due to parasitic capacitances and resistance.}
+    \label{fig:real_world_transistor_response}
+\end{figure}
+
+
+
+\subsection*{Explanation of Gain Drop}
+\begin{itemize}
+    \item \textbf{Low-Frequency Drop}: Due to the high reactance of coupling capacitors the gain drops at low frequencies, limiting signal transfer.
+    \item \textbf{High-Frequency Drop}: The gain reduction at high frequencies is due to parasitic capacitances (e.g. the Miller effect in transistors and the inherent frequency response limitations of active components.)
+\end{itemize}
+
+
+  \section*{Proposing Solutions to Mitigate Parasitic Effects}
+
+\begin{itemize}
+    \item \textbf{Bypass Capacitors}: between the emitter and ground to stabilise gain and minimise the impact of \( r_b \).
+    \item \textbf{Feedback Network}: to linearise the gain and reduce sensitivity to base and collector resistance.
+    \item \textbf{Compensation Capacitance}: between the collector and base to offset \( C_{out} \). In high-frequency applications it reduces phase shifts caused by \( C_{out} \).
+  
+\end{itemize}
+
+
+\section*{Cascade to achieve a higher overall gain
+}
+\subsection*{Design Process of CE-CC\cite{CascadingAmplifier}}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth, height=0.18\textheight]{CE-CC.png}
+    \caption{CE-CC Cascaded Amplifier Schematics}
+    \label{fig:CE-CC Cascaded Amplifier}
+\end{figure}
+
+\textbf{CE (Q1)} acts as the primary amplifying stage with voltage gain. \textbf{CC (Q2)} buffers the amplified signal, providing low output impedance suitable for driving loads. The \textbf{coupling capacitor \( C_2 \)} connects the CE and CC stages while blocking DC\cite{BJTAmpDesign}. The \textbf{emitter resistor \( R_6 \)} in Q2 stabilises the output without significantly impacting the voltage gain.
+
+ 
+\begin{figure}[h!]
+        \centering
+        \includegraphics[width=0.5\textwidth, height=0.17\textheight]{CE-CC voltage gain.png}
+        \caption{Av=-50 Waveform of CE-CC Amplifier.}
+        \label{fig:CE-CC Cascaded Amplifier voltage gain}
+    \end{figure}
+    
+Direct coupling between Q1's collector and Q2's base minimises DC shifts \cite{BJT}. Input and output matching are addressed by \( R_2 = 30\,\text{k}\Omega \), which provides sufficient input resistance, while the CC stage \cite{CECCAmp} (Q2) reduces output impedance for better load driving. The emitter bypass \( C_3 \) helps stabilise the AC response\cite{CCAmpDesign}, with minimal oscillations observed. The frequency response remains effective within the desired range, without significant high-frequency peaking. Thermal stability is maintained, as no significant thermal runaway issues were detected during LTspice simulation.
+
+
+ \begin{figure}[h!]
+        \centering
+        \includegraphics[width=0.5\textwidth, height=0.25\textheight]{CE-CB schematic.png}
+        \caption{CE-CB Cascaded Amplifier with a voltage gain of -130,Optimised inter-stage coupling, input/output matching, and stability}
+        \label{fig:CE-CB Cascaded Amplifier}
+    \end{figure}
+
+
+ \begin{figure}[h!]
+        \centering
+        \includegraphics[width=0.5\textwidth, height=0.17\textheight]{CE-CB wavefront.png}
+        \caption{CE-CB Cascaded Amplifier voltage gain}
+        \label{fig:CE-CB Cascaded Amplifier voltage gain}
+    \end{figure}
+ 
+
+
+\section*{Comparison of CE-CB and CE-CC}
+
+\textbf{Voltage Gain}: The CE-CB \cite{{EE330Lect34}} configuration demonstrates higher voltage gain (Av= -130) compared to the CE-CC design(Av=-50). The addition of the CB stage (Q2) boosts the voltage gain even further. In contrast, the CE-CC design emphasizes current gain with moderate voltage gain.
+
+\textbf{Frequency Response}: Through AC analysis,  CE-CB  amplifier shown a wider bandwidth compared to CE-CC. The CB stage \cite{CascodeAmplifier} contributes to improved high-frequency performance due to its low input capacitance, reduce parasitic effects.
+
+\textbf{Input/Output Matching}: The CE stage (Q1) provides Av, and the CB stage(Q2) follows with Ai and low Zin, making it suitable for high-frequency applications. Both offer low Zout due to the second stage, but the Zout of the CE-CB is lower than that of the CE-CC and better for load driving.
+
+Adding Buffer amplifiers can be employed between cascaded stages to improve impedance matching and reduce loading effects. By using an Op-Amp configured as a voltage follower, a high \(Z_{in}\) is inputted to the previous stage, while a low \(Z_{out}\) is inputted to the following stage. It ensures that each amplifier stage can operate with minimal interference from adjacent stages, thereby preserving the voltage levels and gain of each stage.
+
+\textbf{Stability}: CE-CB shows stable performance without oscillations, because \( C_3 \), \( C_1 \), and \( C_2 \) manage the AC response and prevent DC offsets.
+
+\textbf{Application Suitability}:
+
+CE-CB is suited for higher voltage gain and wide bandwidth (e.g, RF amplifiers), while CE-CC is ideal for impedance matching and current buffering (e.g., audio amplifiers or driving low-impedance loads).
+ 
+
+ 
+
+\section{Push-Pull Class AB Power Amplifier\cite{ECE354Lab3}}
+RMS reflects the true effective value of an AC signal and is equivalent to the DC voltage or current that would deliver the same power to a load, providing an accurate measure of signal power \cite{SoundScapeHQ_ABClass}.
+
+% Caption and figure inclusion for the push-pull Class AB amplifier
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.4\textwidth, height=0.23\textheight]{Push-pull Class AB Power Amplifier Circuit} % Replace with the actual path to the image
+    \caption{Push-pull Class AB Power Amplifier Circuit}
+    \label{fig:push_pull_ab}
+\end{figure}
+ 
+
+\item 
+% Caption and figure inclusion for the push-pull Class AB amplifier
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.45\textwidth]{output current replicate output voltage .png} % 
+    \caption{Waveform showing the input voltage (\textit{V(input)}), output voltage (\textit{V(output)}), and output current (\textit{I(R3)}) in a push-pull Class AB amplifier.The current is in phase with the output voltage, showing synchronized sinusoidal behavior, indicating that the circuit operates in a linear region without abrupt changes or clipping.}
+    \label{fig:waveform_ab_amplifier}
+\end{figure}
+
+
+
+% Caption and figure inclusion for the push-pull Class AB amplifier
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.45\textwidth]{bases of Q1 and Q2.png} % Replace with the actual path to the image
+    \caption{signals at the bases of Q1 and Q2 represent how this input signal is split and affects each transistor during operation,}
+    \label{fig:push_pull_ab}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Q1 & Q2 terminals} % Replace with the actual path to the image
+    \caption{The waveform at the base of Q1 illustrates how the input signal drives the transistor during the positive half-cycle, while the waveform at the base of Q2 shows how the input signal drives Q2 during the negative half-cycle.}
+    \label{fig:push_pull_ab}
+\end{figure}
+
+ 
+
+
+
+ 
+
+
+\begin{equation}
+A_v = \frac{V_{out, \text{RMS}}}{V_{in, \text{RMS}}} = \frac{1.8971 \, \text{V}}{2.1207 \, \text{V}} \approx 0.8946
+\end{equation}
+
+ This push-pull Class AB power amplifier \cite{ClassABAmplifier}is designed with near-unity gain to primarily achieve current gain and power amplification without significant voltage amplification. It is optimised for delivering high current to the load while maintaining a low output impedance. This configuration allows it to function as a buffer, transferring the input signal to the output with minimal voltage amplification but with a substantial increase in current driving capability.
+
+\begin{equation}
+A_i = \frac{I_{\text{out}}}{I_{\text{in}}} = \frac{40.375 \text{ mA}}{584.31 \text{ µA}} \approx 69.08
+\end{equation}
+
+
+\begin{equation}
+P_{\text{in}} = V_{\text{in, RMS}} \times I_{\text{in, RMS}} = 2.1 \, \text{V} \times 536 \, \mu\text{A} = 1.1 \, \text{mW}
+\end{equation}
+
+\begin{equation}
+P_{\text{out}} = V_{\text{out, RMS}} \times I_{\text{out, RMS}} = 1.9 \, \text{V} \times 40\, \text{mA} = 77 \, \text{mW}
+\end{equation}
+
+
+\begin{equation}
+G_P = \frac{P_{\text{out}}}{P_{\text{in}}} = \frac{76.6156 \, \text{mW}}{1.138 \, \text{mW}} \approx 67.36
+\end{equation}
+
+
+\begin{equation}
+   P_{\text{DC}} = V_{\text{DC}} \times I_{\text{DC, ac}} \cite{PANotes} = 12 \, \text{V} \times 18.174 \, \text{mA} \approx  = 218 \, \text{mW}
+ \end{equation}
+ 
+ \begin{equation}
+P_{\text{loss}} = P_{\text{DC}} - P_{\text{out}} \cite{ECE331Lab3} = 218 \, \text{mW} - 77 \, \text{mW} \approx 141 \, \text{mW}
+ \end{equation}
+ \subsection*{2. Sources of Power Loss}
+Transistor conduction losses result in power being lost as heat, and in Class AB \cite{AB}, quiescent current is used to minimise crossover distortion but increases power consumption. Voltage drops across components, such as the forward voltage in diodes (D1 and D2) and base-emitter voltage drops in transistors, also contribute to the losses\cite{AnalogDevicesLab14}. A significant portion of power is dissipated as heat, which is typical in power amplifiers around 65\% of the power being lost as non-useful energy, primarily as heat.
+
+
+ 
+ \begin{equation}
+\text{Efficiency}\cite{RFPowerEfficiency} = \frac{P_{\text{out}}}{P_{\text{DC}}} \% = \frac{76.6156 \, \text{mW}}{218 \, \text{mW}}\% \approx 35.14\%
+ \end{equation}
+   
+
+\section*{Total Harmonic Distortion (THD)}
+\textbf{FFT Analysis  \cite{FFT}}:
+Set the FFT parameters to view the first few harmonics (up to 10 kHz).The fundamental frequency at 1 kHz shows a peak amplitude of approximately 1.0 V.
+ 
+
+\textbf{Harmonics}:
+\begin{itemize}
+    \item \textbf{2nd Harmonic (2 kHz)}: Amplitude of 0.03 V
+    \item \textbf{3rd Harmonic (3 kHz)}: Amplitude of 0.02 V
+    \item \textbf{4th Harmonic (4 kHz)}: Amplitude of 0.01 V
+    \item Higher-order harmonics are present but with significantly lower amplitudes.
+\end{itemize}
+
+\begin{equation}
+\text{THD} \cite{IEEE} = \frac{\sqrt{V_2^2 + V_3^2 + V_4^2 + \ldots}}{V_1} \times 100\%  \approx 3.7\%
+\end{equation}
+
+\section*{Observations}
+This level is consistent. Crossover distortion and non-linearities caused by imperfect transistor matching and standard biasing with diodes. For further THD reduction, refining the biasing network and adding feedback or using complementary driver circuits. 
+
+ \section{Conclusion}
+
+Through detailed theoretical calculations and LTspice simulations of voltage gain, input and output impedances, noise behaviour, and frequency response, we confirmed that the amplifier met the target gain of 20 dB and operated as expected in terms of stability and accuracy. While, as expected, there were deviations between theoretical predictions and simulation outcomes due to real-world parasitic effects and noise, this highlights the importance of accounting for non-idealities in practical design. This analysis highlighted the significance of concepts such as impedance matching, feedback networks, and parasitic components. 
+
+ Potential improvements to the amplifier design include enhancing thermal stability, such as incorporating heat sinks or thermally stable components, shielded layouts, and Miller Compensation to address gain roll-off and phase distortion. Additionally, the use of negative feedback can further stabilize the amplifier and reduce harmonic distortion, and unity gain buffers can be used for impedance matching when cascading.
+
+
+
+\tiny % Make all following content tiny
+
+\begin{thebibliography}{18} 
+
+\bibitem{Hosseinzadehlish2023} 
+M. Hosseinzadehlish, S. Jahdi, C. Shen, X. Yuan, I. Laird, O. Alatise, ``Impact of Temperature and Base Bias Stress on the Static Characteristics of Silicon and 4H-SiC NPN Vertical Power BJTs,'' 
+
+\bibitem{OxfordMOSFETvsBJT} 
+Oxford University Press, ``Comparison of the MOSFET and the BJT,'' Available: \url{https://global.oup.com/us/companion.websites/fdscontent/uscompanion/us/static/companion.websites/9780199339136/Appendices/Appendix_G.pdf}.  
+
+\bibitem{ReetaMary2024} 
+Reeta and Reeta Mary, ``Physics Electronics Unit,'' Government Arts Coimbatore, Slide 7, 2024.
+
+
+\bibitem{SedraSmith2004} 
+A. S. Sedra and K. C. Smith, \textit{Microelectronic Circuits}, 5th ed., Oxford University Press, 2004.
+
+\bibitem{Sahay2019} 
+S. Sahay and M. J. Kumar, \textit{Junctionless Field-Effect Transistors: Design, Modeling, and Simulation}, Hoboken, New Jersey, 2019.
+
+\bibitem{Yang2020} 
+W. Y. Yang, J. Kim, K. W. Park, D. Baek, S. Lim, J. Joung, S. Park, H. L. Lee, W. J. Choi, and T. Im, \textit{Electronic Circuits with MATLAB\textsuperscript{\textregistered}, Pspice\textsuperscript{\textregistered}, and Smith Chart}, 1st ed., John Wiley \& Sons, Newark, 2020.
+
+\bibitem{Saha2024} 
+S. K. Saha, \textit{Compact Models for Integrated Circuit Design: Conventional Transistors and Beyond}, CRC Press, 2024.
+
+\bibitem{transistor_notes2024} 
+P. Cheung, ``Transistor Circuit Notes,'' Department of Electrical and Electronic Engineering, Imperial College London. Available: \url{http://www.ee.ic.ac.uk/pcheung/teaching/aero2_signals&systems/transistor%20circuit%20notes.pdf}. Accessed: Nov. 3, 2024.
+
+\bibitem{PangLecture6} 
+P. Pang, ``Lecture 6: Advanced BJT Amplifier Concepts,'' [Online]. Available: \url{http://doctord.dyndns.org/courses/textbooks/JegerBlalock/Pang/Lecture6.pdf}. Accessed: Oct. 25, 2024.
+
+\bibitem{VajpeyiLecture} 
+A. P. Vajpeyi, ``Lecture 8: Bipolar Junction Transistor (BJT) Models,''. Available: \url{https://www.iitg.ac.in/apvajpeyi/ph218/Lec-8.pdf}. 
+
+\bibitem{LeGoff2023} 
+S. Le Goff, ``Lecture Notes Part 3: Bipolar Junction Transistors (BJT),'' [Online]. Available: \url{https://blogs.ncl.ac.uk/stephanelegoff/files/2023/11/Lecture-Notes-Part-3-BJT.pdf}. Accessed: Oct. 25, 2024.
+
+\bibitem{LailiLecture} 
+M. Laili, ``Lecture 3: Transistor Models,'' [Online]. Available: \url{https://ee.eng.usm.my/eeacad/laili/241/L3.pdf}. Accessed: Oct. 26, 2024.
+
+\bibitem{Shockley1950} 
+W. Shockley, \textit{Electrons and Holes in Semiconductors}, D. Nostrand.
+
+\bibitem{Pivnev2014} 
+V. V. Pivnev and S. N. Basan, ``Some Application of the Taylor Series for the Analysis of Processes in Non-Linear Resistive Circuits,'' Applied Mechanics and Materials, vol. 701–702, pp. 1173–1176, Dec. 2014. [Online]. Available: \url{https://www.scientific.net/AMM.701-702.1173}. doi: 10.4028/www.scientific.net/amm.701-702.1173. 
+
+\bibitem{AnalogDevices2004} 
+Analog Devices, Inc., \textit{MAT02: Ultra-low noise, matched dual monolithic transistor}, Rev. B, Data Sheet, 2004. [Online]. Available: \url{https://www.analog.com/media/en/technical-documentation/obsolete-data-sheets/MAT02.pdf}. Accessed: Oct. 26, 2024.
+
+\bibitem{VSSUT} 
+VSSUT. ``Lecture Notes on Bipolar Junction Transistor (BJT),'' Veer Surendra Sai University of Technology, page 4. Available: \url{https://www.vssut.ac.in/lecture_notes/lecture1423722750.pdf}.  
+
+\bibitem{Ben Mabrouk} 
+I. Ben Mabrouk, Assistant Professor, Department of Engineering. Personal communication via email, Oct. 26, 2024.
+
+\bibitem{Hunter} 
+Hunter College, ``Electronics Lab 15,'' Hunter College, Department of Physics and Astronomy, page 4. Available: \url{https://www.hunter.cuny.edu/physics/courses/physics222/repository/files/pdf/ElectronicsLab15.pdf}. 
+
+
+\bibitem{Kumar2024} 
+A. Kumar, \textit{Bipolar Junction Transistor}, Shobhit University. [Online]. Available: \url{https://www.shobhituniversity.ac.in/pdf/econtent/3BipolarJunctionTransistor-Dr-Aniket-Kumar.pdf}.  
+
+
+\bibitem{AnalogDevices} 
+Analog Devices, ``Lab 10: Class A NPN Common-Emitter Amplifier,'' Analog Devices Wiki, Jan. 3, 2018. Available: \url{https://wiki.analog.com/university/courses/engineering_discovery/lab_10}. 
+
+\bibitem{ccea_resistors} 
+Council for the Curriculum, Examinations and Assessment (CCEA), ``Fact File: 2.5 Resistors E12 - E24,'' 2019. Available: \url{https://ccea.org.uk/downloads/docs/Support/Factfile/2019/Fact%20File%3A%202.5%20Resistors%20E12%20-%20E24.pdf}.  
+
+\bibitem{transconductance2024} 
+ScienceDirect, ``Transconductance,'' 2024. Available: \url{https://www.sciencedirect.com/topics/earth-and-planetary-sciences/transconductance}. Accessed: Oct. 26, 2024.
+
+\bibitem{purdueBJT2024}
+W. C. Chew, ``Lecture 13: BJT Basic Configurations,'' Purdue University, 2018. Available: \url{https://engineering.purdue.edu/wcchew/ece255s18/ece%20255%20s18%20latex%20pdf%20files/ece255Lecture_13_Feb27_BJT_Basic_Config.pdf}. Accessed: Nov. 3, 2024.
+
+
+\bibitem{Carnegie1999}
+Carnegie Mellon University, \textit{Lecture Notes on Transistor Operation}, 1999. [Online]. Available: \url{https://course.ece.cmu.edu/~ee321/spring99/LECT/lect12feb24.pdf}. Accessed: Oct. 27, 2024.
+
+\bibitem{MITOCW2006} 
+MIT OpenCourseWare, \textit{Introduction to Electronics, Signals, and Measurement}, Lecture Notes, 6.071J, Spring 2006. [Online]. Available: \url{https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/b30aa58fb0c9915da21e5a5855384818_19_bjt_1.pdf}.  
+
+\bibitem{AmplifierGain2024}
+All About Circuits, \textit{Amplifier Gain}. [Online]. Available: \url{https://www.allaboutcircuits.com/textbook/semiconductors/chpt-1/amplifier-gain/}.
+
+\bibitem{Hu2020} 
+C. Hu, \textit{Lecture Notes on Bipolar Junction Transistors}, University of California, Berkeley. [Online]. Available: \url{https://www.chu.berkeley.edu/wp-content/uploads/2020/01/Chenming-Hu_ch8-2.pdf}.  
+
+\bibitem{ElectronicsTutorials2024} 
+Electronics Tutorials, \textit{Input Impedance of an Amplifier}. [Online]. Available: \url{https://www.electronics-tutorials.ws/amplifier/input-impedance-of-an-amplifier.html}. Accessed: Nov. 3, 2024.
+
+\bibitem{WMPhysicsLab} 
+William \& Mary, Department of Physics, \textit{Analog Electronics Lab Manual, Chapter 6}. [Online]. Available: \url{http://physics.wm.edu/~evmik/classes/Physics_252_Analog_Electronics/lab_manuals/LabManual_Chpt6.pdf}. Accessed: Nov. 3, 2024.
+
+\bibitem{MDPI2024} 
+MDPI, \textit{Title of the Article}. Gels, vol. 8, no. 1, article 42, 2024. [Online]. Available: \url{https://www.mdpi.com/2310-2861/8/1/42}. 
+
+\bibitem{SedraSmith2024}
+A. S. Sedra and K. C. Smith, ``Microelectronic Circuits,'' 7th ed. [Online]. Available: \url{https://www.academia.edu/97542355/Microelectronic_Circuits_Sedra_Smith_7th}. Accessed: Nov. 3, 2024.
+
+\bibitem{AllAboutCircuitsFeedback}
+``Feedback,'' All About Circuits. [Online]. Available: \url{https://www.allaboutcircuits.com/textbook/semiconductors/chpt-4/feedback/}. 
+
+\bibitem{AnalogDevicesMAT02}
+``MAT02 Precision Matched Dual Transistor,'' Analog Devices. [Online]. Available: \url{https://www.analog.com/en/products/mat02.html}. 
+
+\bibitem{DoeeetCapacitors}
+``Capacitor for Coupling and Decoupling Applications,'' doEEEt. [Online]. Available: \url{https://www.doeeet.com/content/eee-components/capacitor-for-coupling-and-decoupling-applications/}. 
+
+\bibitem{NCUFeedbackLecture}
+``Lecture 18: Feedback,'' National Central University. [Online]. Available: \url{https://in.ncu.edu.tw/ncume_ee/harvard-es154/lect_18_feedback.pdf}. 
+
+\bibitem{ThermalStability}
+``As temperature increases, the $V_{BE}$ decreases, which typically increases $I_{C}$. The voltage across $R_{4}$ rises with increased current, reducing the $V_{BE}$,'' [Technical Source].
+
+\bibitem{TITemperatureCoefficient}
+``Temperature Coefficient of a BJT,'' Texas Instruments. [Online]. Available: \url{https://www.ti.com/lit/an/sboa277a/sboa277a.pdf}. 
+
+\bibitem{MetalFilmResistors}
+Understanding Resistor Metal Film Attributes and Applications. \textit{Electronic Component}. Available: \url{https://electroniccomponent.com/understanding-resistor-metal-film-attributes-and-applications/}
+
+\bibitem{BJTHeatSink}
+Would either of these BJTs require a heat sink? \textit{Electronics Stack Exchange}. Available: \url{https://electronics.stackexchange.com/questions/494839/would-either-of-these-bjts-require-a-heat-sink}
+
+\bibitem{MillerLecture}
+J. Miller, "Lecture Notes on Transistor Thermal Management," Brown University, [Online]. Available: \url{https://www.brown.edu/Departments/Engineering/Courses/En162/lecture_JackMiller12.pdf}
+
+
+
+\bibitem{ScienceDirectEmitterJunction}
+``Emitter Junction,'' ScienceDirect. [Online]. Available: \url{https://www.sciencedirect.com/topics/engineering/emitter-junction}. 
+
+\bibitem{OregonStateHSpice}
+``Chapter 14: HSPICE Simulations,'' Oregon State University. [Online]. Available: \url{https://web.engr.oregonstate.edu/~moon/ece323/hspice98/files/chapter_14.pdf}.
+\bibitem{ThermalNoiseEquation}
+J. B. Johnson, ``Thermal Agitation of Electricity in Conductors,'' Physical Review, vol. 32, no. 1, pp. 97–109, July 1928.  
+
+\bibitem{ShotNoiseEquation}
+W. Schottky, ``Über spontane Stromschwankungen in verschiedenen Elektrizitätsleitern,'' Annalen der Physik, vol. 362, no. 23, pp. 541–567, 1918. doi: 10.1002/andp.19183622304.
+
+
+\bibitem{Cadence}
+Cadence PCB Design Resources, ``Miller Effect in Amplifiers,'' [Online]. Available: \url{https://resources.pcb.cadence.com/blog/2023-miller-effect-amplifier#:~:text=The%20Miller%20effect%20refers%20to,described%20it%20in%20the%201920s}.
+
+\bibitem{BJTCurrentsVoltages}
+R. Keim, "Current and Voltage Relationships in Bipolar Junction Transistors (BJTs)," All About Circuits, Nov. 15, 2020. [Online]. Available: \url{https://www.allaboutcircuits.com/video-tutorials/bjt-currents-and-voltages/}.
+
+
+
+\bibitem{CascadingAmplifier}
+"Tutorial 7: Cascading Amplifier Stages," George Washington University, [Online]. Available: \url{https://www2.seas.gwu.edu/~ece20/Spring2011/labs/tutorials/Tutorial7_Cascading_Amplifier_Stages.pdf}
+
+
+\bibitem{BJTAmpDesign}
+"BJT Amplifier Design," Virginia Tech, [Online]. Available: \url{https://www.courses.ece.vt.edu/ece3274/BJTAmpDesign.pdf}
+
+\bibitem{BJT}
+"CE -CC Amplifier Example."
+\url{https://leachlegacy.ece.gatech.edu/ece3050/sp00/ce-ccamp.pdf}
+
+
+\bibitem{CECCAmp}
+G. Leach, "Common-Emitter and Common-Collector Amplifiers," Georgia Institute of Technology, [Online]. Available: \url{https://leachlegacy.ece.gatech.edu/ece3050/sp00/ce-ccamp.pdf}
+
+
+
+
+
+\bibitem{CCAmpDesign}
+"Designing a Common Collector Amplifier," George Washington University, [Online]. Available: \url{https://www2.seas.gwu.edu/~ece20/spring15/labs/tutorials/ECE_2115_Tutorial_6_Designing_a_Common_Collector_Amplifier.pdf}
+
+\bibitem{EE330Lect34}
+Iowa State University, "EE 330 Lecture 34,"  \url{http://class.ece.iastate.edu/ee330/lectures/EE%20330%20Lect%2034%20Fall%202021.pdf}.  
+
+\bibitem{CascodeAmplifier}
+"Cascode Amplifier or CE-CB Configuration," \url{https://www.eeeguide.com/cascode-amplifier-or-ce-cb-configuration/}.  
+
+
+\bibitem{ECE354Lab3}
+A. Sheikholeslami, "ECE 354: Lab 3," University of Toronto, \url{https://www.eecg.utoronto.ca/~ali/ece354/labs/lab3.pdf}.  
+
+\bibitem{SoundScapeHQ_ABClass}
+"Understanding AB Class Power Amplifiers: Fundamentals, Design and Applications," SoundScapeHQ,  \url{https://soundscapehq.com/ab-class-power-amplifier/}.
+
+\bibitem{ClassABAmplifier}
+"Class AB Amplifier," Electronics Tutorials, [Online]. Available: \url{https://www.electronics-tutorials.ws/amplifier/class-ab-amplifier.html}.  
+
+\bibitem{PANotes}
+R. Long, "Power Amplifier Design Notes," University of California, Santa Barbara, \url{https://web.ece.ucsb.edu/~long/ece145b/PA_notes3.pdf}.
+
+\bibitem{ECE331Lab3}
+D. Johns, "ECE 331: Lab 3," University of Toronto, \url{https://www.eecg.toronto.edu/~johns/ece331/labs/lab3.pdf}.
+
+
+\bibitem{AB}
+Virginia Tech. (n.d.). \url{https://vtechworks.lib.vt.edu/server/api/core/bitstreams/ef5685a4-7077-4725-a2d9-6224438f1d7a/content}.
+
+\bibitem{AnalogDevicesLab14} Analog Devices, "Push-Pull Class B and Class AB Amplifiers," \url{https://wiki.analog.com/university/courses/engineering_discovery/lab_14}.
+
+
+\bibitem{RFPowerEfficiency} B. Witte, "How to calculate RF power amplifier efficiency," \url{https://www.5gtechnologyworld.com/how-to-calculate-rf-power_amplifier-efficiency/}.
+
+\bibitem{FFT} 
+\url{https://www.cytechglobal.com/products/analog-devices/technical-articles/try-ltspice/try-ltspice-frequency-analysis-using-fft}
+
+
+\bibitem{IEEE}  
+"IEEE Standard for Harmonic Control in Electric Power Systems". IEEE STD 519-2022 (Revision of IEEE STD 519-2014) ISBN 978-1-5044-8727-6.
+
+
+\end{thebibliography}
+
+
+\end{document}
