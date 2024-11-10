@@ -1,0 +1,123 @@
+To check if the ADC conversion is complete on the LPC1768 microcontroller, we need to examine the `DONE` bit in the `AD0GDR` (ADC Global Data Register). The `DONE` bit, which is bit 31, will be set to `1` when the ADC conversion has finished. Here’s a detailed step-by-step explanation and the assembly code to accomplish this.
+
+---
+
+### Objective
+Monitor the `DONE` bit (bit 31) in the `AD0GDR` register. If this bit is set to `1`, it means the ADC conversion is complete. If it’s `0`, the conversion is still in progress.
+
+### Register Information
+- **Register**: `AD0GDR` (ADC Global Data Register)
+- **Address of `AD0GDR`**: `0x4003C004`
+- **Bit to Check**: Bit 31 (`DONE` bit)
+
+The `AD0GDR` register holds the conversion result and status information. The `DONE` bit in this register serves as an indicator for the end of a conversion.
+
+---
+
+### Step-by-Step Guide
+
+#### Step 1: Load the Address of `AD0GDR` into a Register
+
+1. **Instruction**:
+   ```assembly
+   LDR R0, =0x4003C004
+   ```
+   
+2. **Explanation**:
+   - **`LDR` (Load Register)**: This instruction loads the address of the `AD0GDR` register into `R0`.
+   - We’re using `R0` to hold the address, which allows us to access `AD0GDR` indirectly for reading the status.
+
+3. **Why We Do This**:
+   - Loading the `AD0GDR` address into `R0` prepares us to check the status of the `DONE` bit by reading from this address.
+
+---
+
+#### Step 2: Set Up a Loop to Continuously Check the `DONE` Bit
+
+1. **Label the Loop**:
+   ```assembly
+   wait_for_conversion:
+   ```
+   
+2. **Explanation**:
+   - **Labels** are used to mark specific points in the code. In this case, `wait_for_conversion` labels the beginning of a loop.
+   - We’ll use this label to create a loop that repeatedly checks the `DONE` bit until it’s set to `1`, indicating the conversion is complete.
+
+---
+
+#### Step 3: Read the Value of `AD0GDR` into Another Register
+
+1. **Instruction**:
+   ```assembly
+   LDR R1, [R0]
+   ```
+   
+2. **Explanation**:
+   - **`LDR R1, [R0]`**: This loads the current value of `AD0GDR` (addressed by `R0`) into `R1`.
+   - Now, `R1` holds the value of `AD0GDR`, which includes the `DONE` bit along with the ADC conversion result.
+
+3. **Why We Do This**:
+   - By loading `AD0GDR` into `R1`, we can examine the `DONE` bit to determine if the conversion is complete.
+
+---
+
+#### Step 4: Test the `DONE` Bit (Bit 31) in `R1`
+
+1. **Instruction**:
+   ```assembly
+   TST R1, #0x80000000
+   ```
+   
+2. **Explanation**:
+   - **`TST` (Test)**: This instruction performs a bitwise AND between `R1` and `0x80000000`, which corresponds to bit 31 being set (`1000 0000 0000 0000 0000 0000 0000 0000` in binary).
+   - The `TST` instruction updates the Zero flag (Z) based on the result of the operation:
+     - If bit 31 is `1` (indicating `DONE` is set), the Zero flag is cleared.
+     - If bit 31 is `0` (indicating the conversion is not yet complete), the Zero flag is set.
+
+3. **Why We Do This**:
+   - By testing bit 31, we can determine the conversion status. If the Zero flag is set, the `DONE` bit is still `0`, meaning the conversion is in progress. If the Zero flag is cleared, the `DONE` bit is `1`, meaning the conversion is complete.
+
+---
+
+#### Step 5: Branch Back to the Loop if Conversion is Not Complete
+
+1. **Instruction**:
+   ```assembly
+   BEQ wait_for_conversion
+   ```
+   
+2. **Explanation**:
+   - **`BEQ` (Branch if Equal)**: This instruction checks the Zero flag and branches back to `wait_for_conversion` if the Zero flag is set.
+   - In this context, if the Zero flag is set (meaning the `DONE` bit is `0`), we loop back to `wait_for_conversion` to continue checking until the conversion is finished.
+
+3. **Why We Do This**:
+   - Using `BEQ` forms a **busy-wait loop**. This loop continues to check the `DONE` bit until it’s set to `1`, ensuring we only proceed once the ADC conversion is complete.
+
+---
+
+### Complete Assembly Code
+
+Here’s the complete assembly code to check if the ADC conversion has finished using the `DONE` bit in `AD0GDR`:
+
+```assembly
+LDR R0, =0x4003C004        @ Load AD0GDR register address into R0
+
+wait_for_conversion:
+   LDR R1, [R0]             @ Load the current value of AD0GDR into R1
+   TST R1, #0x80000000      @ Test the DONE bit (bit 31)
+   BEQ wait_for_conversion  @ If DONE is not set, branch back to wait_for_conversion
+```
+
+---
+
+### Explanation Recap
+
+1. **Load Address** (`LDR R0, =0x4003C004`): Prepares the address of `AD0GDR` for checking the `DONE` bit.
+2. **Label the Loop** (`wait_for_conversion:`): Marks the start of a loop to monitor the `DONE` bit.
+3. **Load AD0GDR Value** (`LDR R1, [R0]`): Reads the current value of `AD0GDR` to check its status.
+4. **Check the `DONE` Bit** (`TST R1, #0x80000000`): Tests bit 31 to see if the ADC conversion is complete.
+5. **Branch if Not Complete** (`BEQ wait_for_conversion`): Loops back to continue checking until the `DONE` bit is set.
+
+### Summary
+
+This code continuously checks the `DONE` bit in `AD0GDR`. When the `DONE` bit becomes `1`, the conversion is complete, and the loop will exit. This method ensures you only proceed once the ADC has finished its conversion, avoiding premature reads of incomplete data. Let me know if you need further clarification on any part of this code!
