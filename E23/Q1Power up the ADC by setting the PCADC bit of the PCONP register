@@ -69,23 +69,50 @@ STR R1, [R0]           @ Write back to PINSEL3
 @PDN (bit 21): 1 (already set).
 @START (bits 24-26): 001 to begin conversion
 
+Now that the ADC is powered on, enabled, and configured for channel AD0.4, we can start a conversion.
+
+Configure AD0CR for Conversion:
+
+In AD0CR, bits 0-7 (SEL) select the ADC channel. Set these bits to 0x10 (binary 00010000) to select channel 4 (AD0.4).
+Set bits 8-15 (CLKDIV) to 0xFF to control the ADC clock speed. This divider slows down the clock for accuracy.
+Bits 24-26 (START) set the start condition. Set these bits to 001 for a manual start.
+
 LDR R0, =0x4003C000       @ Load AD0CR address into R0
 MOV R1, #0x00200110       @ Configure AD0CR for channel 4, enable ADC, set start
 STR R1, [R0]              @ Write to AD0CR to start the conversion
 
+SEL selects the channel.
+CLKDIV controls ADC timing; a higher value provides slower, more accurate readings.
+START initiates the conversion.
+
 @Step 5: Check for Conversion Completion
 @Check DONE Bit in AD0GDR:
+Step 5: Monitor the Conversion Completion
+The conversion process takes a small amount of time, and we need to wait for it to complete by checking the DONE bit in the AD0GDR register.
 
+Check AD0GDR for Completion:
+
+The AD0GDR (Global Data Register) at 0x4003C004 holds the conversion result and status.
+Bit 31 (DONE) indicates completion. When it’s set to 1, the conversion is done.
+Wait for Completion:
+
+Continuously read AD0GDR and check if bit 31 is set
 @The AD0GDR register (ADC Global Data Register) at 0x4003_C004 holds the result and the DONE status.
 @The DONE bit (bit 31) is set to 1 when the conversion is complete.
 @Wait for Conversion Completion:
-
+SEL (Bits 0-7): This field allows us to select which ADC channel we want to use. Setting it to 0x10 (binary 00010000) selects AD0.4, corresponding to P1.30.
+CLKDIV (Bits 8-15): ADCs often need a slower clock to sample accurately. Setting CLKDIV to 0xFF provides a slower, more stable ADC clock, reducing noise and increasing accuracy.
+START (Bits 24-26): This field specifies when the ADC should start sampling. Setting it to 001 configures the ADC to start immediately after writing to AD0CR.
 @Continuously read AD0GDR and check if bit 31 is set.
 
 LDR R0, =0x4003C004       @ Load AD0GDR address into R0
 
 @wait_for_conversion: LDR R1, [R0] @ Read AD0GDR TST R1, #0x80000000 @ Test if DONE bit (bit 31) is set BEQ wait_for_conversion @ Wait if not done
 
+wait_for_conversion:
+   LDR R1, [R0]              @ Read AD0GDR
+   TST R1, #0x80000000       @ Test DONE bit (bit 31)
+   BEQ wait_for_conversion   @ If not done, wait
 
 ### Step 6: Read the ADC Value
 
@@ -97,3 +124,19 @@ Assembly code:
 ```assembly
 MOV R2, R1, LSR #4        @ Shift right by 4 to obtain the ADC result
 AND R2, R2, #0xFFF        @ Mask to get the 12-bit ADC value
+
+LDR R1, [R0]:
+
+This instruction loads the value from the memory address in R0 (which we previously set to the address of AD0GDR) into register R1.
+AD0GDR is the ADC Global Data Register, which contains both the ADC result and a status bit that indicates if the conversion is complete.
+TST R1, #0x80000000:
+
+TST performs a bitwise AND operation between R1 and 0x80000000. This value corresponds to bit 31, the DONE bit in AD0GDR.
+The DONE bit will be 1 when the ADC conversion is complete. If the result of this TST operation is zero, it means the DONE bit is not set, and the conversion is still in progress.
+BEQ wait_for_conversion:
+
+BEQ stands for "Branch if Equal." It will cause the program to branch (or loop back) to the wait_for_conversion label if the zero flag is set, which means the DONE bit was not set.
+This line essentially forms a loop that continuously checks if the DONE bit is set, waiting for the ADC conversion to complete.
+What’s Happening Here:
+This segment of code implements a busy-wait loop, which repeatedly checks if the ADC conversion is complete. The loop keeps checking until the DONE bit is set, signaling that the conversion is finished and the result is ready.
+Once the DONE bit is set, the BEQ instruction will no longer branch back to wait_for_conversion, allowing the program to proceed to the next instructions (e.g., reading the ADC result).
