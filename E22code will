@@ -1,0 +1,115 @@
+#define leftButton 19
+#define rightButton 18
+
+#define motorA 17
+#define motorB 20
+#define motorSpeed 6
+
+#define potPin A1
+
+bool rightPressed = false;
+bool leftPressed = false;
+
+bool running = false;
+bool turningLeft = false;
+
+bool sineWave = false;
+
+float angle = 0;
+
+int rampStep = 1;
+int targetSpeed = 0;
+int currentSpeed = 0;
+
+void setup() {
+  // Motor
+  pinMode(motorA, OUTPUT);
+  pinMode(motorB, OUTPUT);
+  pinMode(motorSpeed, OUTPUT);
+
+  // Buttons
+  pinMode(leftButton, INPUT_PULLUP);
+  pinMode(rightButton, INPUT_PULLUP);
+
+  // Potentiometer
+  pinMode(potPin, INPUT);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  if (digitalRead(rightButton) == LOW) {
+    if (!rightPressed) {
+      if (!turningLeft) {
+        running = !running;
+      } else {
+        running = true;
+        turningLeft = false;
+      }
+      rightPressed = true;
+    }
+  } else {
+    rightPressed = false;
+  }
+
+  if (digitalRead(leftButton) == LOW) {
+    if (!leftPressed) {
+      if (turningLeft) {
+        running = !running;
+      } else {
+        running = true;
+        turningLeft = true;
+      }
+      leftPressed = true;
+    }
+  } else {
+    leftPressed = false;
+  }
+
+  if (running) {
+    targetSpeed = analogRead(potPin) / 4;
+  } else {
+    targetSpeed = 0;
+  }
+  if (turningLeft) {
+    targetSpeed *= -1;
+  }
+
+  if ((digitalRead(leftButton) == LOW) && (digitalRead(rightButton) == LOW)) {
+    sineWave = true;
+  } else {
+    sineWave = false;
+  }
+
+  if (sineWave) {
+    digitalWrite(motorA, HIGH);
+    digitalWrite(motorB, LOW);
+    analogWrite(motorSpeed, (int)(127.5 * (sin(angle) + 1)));
+  } else {
+    if (targetSpeed < currentSpeed) {
+      currentSpeed -= rampStep;
+    } else if (targetSpeed > currentSpeed) {
+      currentSpeed += rampStep;
+    }
+    analogWrite(motorSpeed, abs(currentSpeed));
+    if (abs(currentSpeed) > 3) {
+      if (currentSpeed < 0) {
+        digitalWrite(motorA, LOW);
+        digitalWrite(motorB, HIGH);
+      } else {
+        digitalWrite(motorA, HIGH);
+        digitalWrite(motorB, LOW);
+      }
+    } else {
+      digitalWrite(motorA, LOW);
+      digitalWrite(motorB, LOW);
+    }
+  }
+
+  angle += 0.02;
+  if (angle > TWO_PI) angle = 0; // Reset angle to avoid overflow
+  Serial.println(targetSpeed);
+  Serial.println(currentSpeed);
+  Serial.println("");
+  delay(20);
+}
