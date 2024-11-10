@@ -1,0 +1,99 @@
+@Step 1: Power Up the ADC
+@To enable the ADC, we first need to power it up by configuring the PCONP register. The LPC1768 microcontroller allows us to manage the power consumption of each peripheral, and the ADC is no exception.
+
+
+@Locate the PCONP Register:
+
+@The PCONP register controls the power to all peripherals on the LPC1768. To power up the ADC, you need to set bit 12 (known as PCADC) in this register.
+@Set the PCADC Bit:
+@In this register, bit 12 (referred to as PCADC) controls the power to the ADC. Setting this bit to 1 powers up the ADC module.
+@The rest of the bits in PCONP control other peripherals, so we only want to modify bit 12.
+
+@The address for the PCONP register is 0x400F_C0C4.
+@Load this address into a register and set bit 12 to 1 to enable power for the ADC.
+
+LDR R0, =0x400FC0C4    @ Load PCONP register address into R0
+LDR R1, [R0]            @ Load current value of PCONP into R1
+ORR R1, R1, #0x00001000 @ Set bit 12 to 1 (enable ADC power)
+STR R1, [R0]            @ Write back to PCONP
+
+@LDR (Load Register) moves an address or value into a register.
+@ORR performs a bitwise OR operation to set only bit 12 without affecting other bits.
+@STR (Store Register) writes the value back to the memory location in R0.
+@After running this code, the ADC will be powered on, but it still needs to be enabled in the ADC control register.
+
+
+@Step 2: Enable the ADC in AD0CR Register
+@Locate the AD0CR Register:
+@Next, we need to set the ADC to an operational mode. The AD0CR (ADC Control Register) is used to configure various settings of the ADC.
+@The AD0CR (ADC Control Register) configures the ADC operation. To enable the ADC, set the PDN bit (bit 21) in this register.
+@Set the PDN Bit:
+@In this register, bit 21 (PDN) controls the power state. Setting PDN to 1 will bring the ADC out of power-down mode.
+
+
+@The address for AD0CR is 0x4003_C000.
+@Load this address, set bit 21 to 1 to bring the ADC out of power-down mode, and store it back.
+
+LDR R0, =0x4003C000    @ Load AD0CR register address into R0
+LDR R1, [R0]           @ Load current value of AD0CR into R1
+ORR R1, R1, #0x00200000 @ Set bit 21 (PDN) to enable ADC
+STR R1, [R0]           @ Write back to AD0CR
+
+Setting the PDN bit to 1 enables the ADC and takes it out of power-down mode, preparing it for use.
+
+@Step 3: Select the ADC Channel
+@Choose AD0.4 Channel (DIP Pin 19):
+@The ADC has multiple input channels, and in this example, we’ll use channel AD0.4, which is connected to P1.30 (DIP Pin 19 on the MBED board). We need to configure this pin to act as an ADC input rather than a GPIO.
+@The ADC channel 4 (AD0.4) is mapped to pin P1.30. To enable it, configure the PINSEL3 register to select AD0.4 functionality on P1.30.
+@Set PINSEL3 Register for AD0.4:
+
+@The address for PINSEL3 is 0x4002_C00C.
+@To select AD0.4 on P1.30, set bits 28 and 29 to 01
+
+LDR R0, =0x4002C00C    @ Load PINSEL3 register address into R0
+LDR R1, [R0]           @ Load current value of PINSEL3 into R1
+BIC R1, R1, #0x30000000 @ Clear bits 28 and 29
+ORR R1, R1, #0x10000000 @ Set bits 28 and 29 to `01` for AD0.4
+STR R1, [R0]           @ Write back to PINSEL3
+@BIC (Bit Clear) clears specific bits to 0.
+@Setting bits 28-29 to 01 assigns the ADC function to P1.30.
+
+@Step 4: Start the ADC Conversion
+@Set ADC Start in AD0CR:
+@In the AD0CR register, set START bits (bits 24-26) to 001 for a start on a manual write.
+@Set the SEL bits (0-7) to select channel 4 (AD0.4) and configure the clock divider for the desired ADC clock speed.
+@Here’s an example configuration:
+@SEL (bits 0-7): 0x10 (binary 00010000) to select channel 4.
+@CLKDIV (bits 8-15): Set to 0xFF to slow down the ADC clock for accuracy.
+@BURST (bit 16): 0 (manual start).
+@PDN (bit 21): 1 (already set).
+@START (bits 24-26): 001 to begin conversion
+
+LDR R0, =0x4003C000       @ Load AD0CR address into R0
+MOV R1, #0x00200110       @ Configure AD0CR for channel 4, enable ADC, set start
+STR R1, [R0]              @ Write to AD0CR to start the conversion
+
+@Step 5: Check for Conversion Completion
+@Check DONE Bit in AD0GDR:
+
+@The AD0GDR register (ADC Global Data Register) at 0x4003_C004 holds the result and the DONE status.
+@The DONE bit (bit 31) is set to 1 when the conversion is complete.
+@Wait for Conversion Completion:
+
+@Continuously read AD0GDR and check if bit 31 is set.
+
+LDR R0, =0x4003C004       @ Load AD0GDR address into R0
+
+@wait_for_conversion: LDR R1, [R0] @ Read AD0GDR TST R1, #0x80000000 @ Test if DONE bit (bit 31) is set BEQ wait_for_conversion @ Wait if not done
+
+
+### Step 6: Read the ADC Value
+
+1. **Extract ADC Result**:
+- The result of the ADC conversion is in bits 4-15 of `AD0GDR`.
+- Shift the result to the right by 4 bits to get a 12-bit value in the lower part of the register.
+
+Assembly code:
+```assembly
+MOV R2, R1, LSR #4        @ Shift right by 4 to obtain the ADC result
+AND R2, R2, #0xFFF        @ Mask to get the 12-bit ADC value
