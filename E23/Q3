@@ -1,0 +1,67 @@
+To configure the LPC1768 microcontroller to use the AD0.4 channel (connected to DIP pin 19), we need to set up the PINSEL3 register to assign the appropriate function to the pin P1.30
+
+LDR R0, =0x4002C00C
+
+Explanation:
+
+LDR (Load Register): This instruction loads the memory address of PINSEL3 into register R0.
+PINSEL3 is the register responsible for configuring the functions of certain pins on Port 1, including P1.30.
+Address 0x4002C00C is the location of the PINSEL3 register in memory.
+Why We Do This:
+
+By loading the PINSEL3 address into R0, we set up for indirect access, allowing us to read from and write to PINSEL3.
+This is necessary because we’ll be modifying bits in PINSEL3 specifically for P1.30, ensuring that the pin operates as an ADC input rather than a GPIO or other function.
+
+Step 2: Load the Current Value of PINSEL3 into Another Register
+LDR R1, [R0]
+
+Explanation:
+
+LDR R1, [R0]: This instruction loads the current value stored at the address in R0 (the PINSEL3 register) into register R1.
+Now R1 contains the current value of PINSEL3.
+Why We Do This:
+
+Loading the current value of PINSEL3 into R1 allows us to modify only the necessary bits (bits 28-29) without affecting other bits that may already be configured for other pins.
+This step ensures that we don’t unintentionally alter the functions of other pins controlled by PINSEL3
+
+Step 3: Clear Bits 28 and 29 in PINSEL3
+BIC R1, R1, #0x30000000
+
+Explanation:
+
+BIC (Bit Clear): This operation performs a bitwise AND with the inverse of 0x30000000, effectively clearing bits 28 and 29 in R1.
+The value 0x30000000 in hexadecimal corresponds to bits 28 and 29 being set to 1 in binary:
+yaml
+Copy code
+
+By clearing bits 28 and 29, we remove any previous configuration on P1.30, preparing it for the correct AD0.4 function setting.
+
+Why We Do This:
+
+Clearing these bits ensures there is no residual setting on P1.30. This is essential for accurately configuring the pin as an ADC input without interference from previous settings
+
+Step 4: Set Bits 28 and 29 to 01 to Select the AD0.4 Function
+ORR R1, R1, #0x10000000
+
+Explanation:
+
+ORR (Logical OR): This operation performs a bitwise OR between R1 and 0x10000000, setting bit 28 to 1 and bit 29 to 0.
+The value 0x10000000 in hexadecimal corresponds to setting bit 28 to 1 while keeping bit 29 as 0:0001 0000 0000 0000 0000 0000 0000 0000
+0001 0000 0000 0000 0000 0000 0000 0000
+
+This configuration (01 in bits 28-29) enables the AD0.4 functionality on P1.30.
+Why We Do This:
+
+Setting bits 28 and 29 to 01 is explicitly required to enable the AD0.4 function on P1.30, allowing this pin to act as an analog input for the ADC.
+This setting ensures that the analog signal present on DIP pin 19 (P1.30) is correctly routed to the ADC channel AD0.4.
+
+Step 5: Write the Modified Value Back to PINSEL3
+STR R1, [R0]
+Explanation:
+
+STR R1, [R0]: This instruction stores the modified value in R1 back into the memory location at R0, which is the PINSEL3 register.
+Writing this value back to PINSEL3 applies the configuration change, setting P1.30 to function as AD0.4.
+Why We Do This:
+
+Storing the updated value in PINSEL3 completes the configuration. Now, P1.30 is officially configured to act as AD0.4, ready to accept analog input for conversion.
+Without this step, the modifications made in R1 would not be applied to the PINSEL3 register.
