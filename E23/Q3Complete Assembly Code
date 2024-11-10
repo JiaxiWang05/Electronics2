@@ -1,0 +1,5 @@
+LDR R0, =0x4002C00C        @ Load the address of PINSEL3 register into R0
+LDR R1, [R0]               @ Load the current value of PINSEL3 into R1
+BIC R1, R1, #0x30000000    @ Clear bits 28 and 29 (P1.30 configuration)
+ORR R1, R1, #0x10000000    @ Set bits 28 and 29 to `01` to select AD0.4
+STR R1, [R0]               @ Write the modified value back to PINSEL3
