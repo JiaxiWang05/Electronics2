@@ -1,0 +1,4 @@
+LDR R0, =0x4003C000        @ Load the address of AD0CR register into R0
+LDR R1, [R0]               @ Load the current value of AD0CR into R1
+ORR R1, R1, #0x00200000    @ Set bit 21 (PDN) to 1 to enable the ADC
+STR R1, [R0]               @ Write the modified value back to AD0CR
