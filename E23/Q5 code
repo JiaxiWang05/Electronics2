@@ -1,0 +1,11 @@
+LDR R0, =0x4003C004        @ Load AD0GDR register address into R0
+
+wait_for_conversion:
+   LDR R1, [R0]             @ Load the current value of AD0GDR into R1
+   TST R1, #0x80000000      @ Test the DONE bit (bit 31)
+   BEQ wait_for_conversion  @ If DONE is not set, branch back to wait_for_conversion
+Load Address (LDR R0, =0x4003C004): Prepares the address of AD0GDR for checking the DONE bit.
+Label the Loop (wait_for_conversion:): Marks the start of a loop to monitor the DONE bit.
+Load AD0GDR Value (LDR R1, [R0]): Reads the current value of AD0GDR to check its status.
+Check the DONE Bit (TST R1, #0x80000000): Tests bit 31 to see if the ADC conversion is complete.
+Branch if Not Complete (BEQ wait_for_conversion): Loops back to continue checking until the DONE bit is set.
