@@ -9,3 +9,61 @@ The AD0CR register controls the ADC settings, including enabling or disabling it
 
 Step 1: Load the Address of the AD0CR Register into a Register
 LDR R0, =0x4003C000
+
+The address 0x4003C000 is the base address of the AD0CR register in memory. This is the location in memory where we can read or
+write to control the ADC.
+
+Why We Do This:
+
+Loading the AD0CR address into R0 allows us to access the AD0CR register indirectly. By storing the address in R0, we can later use it to read the current value of AD0CR, modify it, and write it back to the same address.
+This step is crucial because assembly language doesn’t allow direct manipulation of specific register bits; we need to use indirect addressing
+
+Step 2: Load the Current Value of AD0CR into Another Register
+LDR R1, [R0]
+
+Explanation:
+
+LDR R1, [R0]: This instruction loads the value stored at the address in R0 (the AD0CR address) into register R1.
+Here, R1 will now contain the current value of the AD0CR register.
+Why We Do This:
+
+By loading the current value of AD0CR into R1, we ensure that any settings already configured in AD0CR remain unchanged.
+We only want to modify bit 21 (PDN), so it’s essential to have the current value of AD0CR in R1 to avoid overwriting other bits accidentally.
+
+Step 3: Modify Bit 21 to Enable the ADC
+ORR R1, R1, #0x00200000
+Explanation:
+
+ORR (Logical OR): This operation performs a bitwise OR between R1 (current value of AD0CR) and #0x00200000.
+The value #0x00200000 in hexadecimal corresponds to a binary number where only bit 21 is 1 and all other bits are 0. In binary, it looks like this: 0010 0000 0000 0000 0000 0000.
+By OR’ing R1 with #0x00200000, we set bit 21 in R1 to 1 without changing any other bits.
+Detailed Explanation of OR Operation:
+
+The purpose of ORR R1, R1, #0x00200000 is to enable only bit 21 (PDN) in the AD0CR register.
+Bitwise OR operation: When you OR two binary numbers, any position where either operand has a 1 will result in a 1 in the output.
+
+This effectively sets bit 21 to 1, enabling the ADC, while other bits remain as they were.
+Why We Do This:
+
+This step is essential because setting bit 21 to 1 activates the ADC by bringing it out of power-down mode.
+Without setting the PDN bit, the ADC remains in a low-power state, preventing it from functioning even though it has been powered on in PCONP.
+
+Step 4: Write the Modified Value Back to AD0CR
+STR R1, [R0]
+
+Explanation:
+
+STR R1, [R0]: This instruction stores the value in R1 back to the address in R0.
+Since R0 contains the address of AD0CR, this writes the modified value (with bit 21 set) to the AD0CR register.
+Why We Do This:
+
+Writing the modified value back to AD0CR completes the enabling process.
+With bit 21 (PDN) set in AD0CR, the ADC is now fully enabled and ready for additional configuration and operation.
+This final step ensures that the PDN bit change is applied to the actual ADC control register, enabling the ADC for use.
+
+
+Summary of Each Step
+Load Address of AD0CR into R0: Prepares the address for indirect access.
+Load Current AD0CR Value into R1: Retrieves the current value, preserving other bits.
+Set Bit 21 Using ORR: Activates the ADC by setting PDN bit to 1.
+Store Modified Value in AD0CR: Applies the change to enable the ADC
