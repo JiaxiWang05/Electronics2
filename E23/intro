@@ -1,0 +1,10 @@
+ARM Cortex M3 microcontroller on the MBED board (LPC1768)
+Power Supply Circuits:
+
+Shows the voltage regulation and power connections, with voltage lines like +3.3V and +5V, alongside decoupling capacitors for signal stability​(MBED_schematics).
+Microcontroller Pin Connections:
+
+Illustrates connections for the LPC1768, covering important pins such as GPIOs, ADC channels, and UART interfaces. Specific pins like P1.18, P1.20, P1.21, and P1.23 are designated for LED control, which aligns with the lab task of controlling LEDs using GPIO​(E23_Digital_Electronics…)​(E23-Digital-Electronics…).
+Peripheral Connections:
+
+Includes details for connections to peripherals, including USB, Ethernet, and JTAG debug pins. These are essential for various interfacing and debugging tasks in embedded development​(E23_Digital_Electronics…)
