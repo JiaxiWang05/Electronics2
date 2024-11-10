@@ -1,0 +1,105 @@
+After confirming that the ADC conversion has completed by checking the `DONE` bit, we can read the converted value from `AD0GDR` (ADC Global Data Register). The result of the ADC conversion is located in bits 4-15 of `AD0GDR`, which provides a 12-bit result.
+
+Here’s a step-by-step guide, with explanations and assembly code to read and extract the ADC value from `AD0GDR`.
+
+---
+
+### Objective
+Once the `DONE` bit indicates that the ADC conversion is complete, read the conversion result from bits 4-15 of the `AD0GDR` register.
+
+### Register and Bit Information
+- **Register**: `AD0GDR` (ADC Global Data Register)
+- **Address of `AD0GDR`**: `0x4003C004`
+- **ADC Result**: The 12-bit conversion result is stored in bits 4-15 of `AD0GDR`.
+
+---
+
+### Step-by-Step Guide
+
+#### Step 1: Load the Address of `AD0GDR` into a Register
+
+1. **Instruction**:
+   ```assembly
+   LDR R0, =0x4003C004
+   ```
+   
+2. **Explanation**:
+   - **`LDR` (Load Register)**: This instruction loads the memory address of `AD0GDR` into register `R0`.
+   - We’re using `R0` to hold the address, allowing us to access `AD0GDR` indirectly for reading the conversion result.
+
+3. **Why We Do This**:
+   - Loading the address of `AD0GDR` into `R0` prepares us to read the converted value. This approach allows us to access the result in a structured manner.
+
+---
+
+#### Step 2: Read the Value of `AD0GDR` into Another Register
+
+1. **Instruction**:
+   ```assembly
+   LDR R1, [R0]
+   ```
+   
+2. **Explanation**:
+   - **`LDR R1, [R0]`**: This instruction loads the current value of `AD0GDR` (addressed by `R0`) into register `R1`.
+   - Now, `R1` contains the entire content of `AD0GDR`, which includes both the `DONE` bit and the 12-bit ADC conversion result.
+
+3. **Why We Do This**:
+   - By loading `AD0GDR` into `R1`, we have the ADC conversion result stored in a register. The result itself is in bits 4-15 of `R1`, so we’ll need to extract this specific range in the next step.
+
+---
+
+#### Step 3: Shift Right to Align the ADC Result
+
+1. **Instruction**:
+   ```assembly
+   MOV R2, R1, LSR #4
+   ```
+   
+2. **Explanation**:
+   - **`MOV R2, R1, LSR #4`**: This instruction performs a logical shift right (LSR) on `R1` by 4 bits, and places the result in `R2`.
+   - Shifting `R1` by 4 bits to the right aligns the 12-bit ADC result to the least significant bits in `R2` (bits 0-11).
+
+3. **Why We Do This**:
+   - The ADC result occupies bits 4-15 of `AD0GDR`. By shifting the value right by 4 bits, we move the ADC result to bits 0-11 in `R2`, making it easy to extract and use.
+
+---
+
+#### Step 4: Mask to Extract the 12-bit ADC Value
+
+1. **Instruction**:
+   ```assembly
+   AND R2, R2, #0xFFF
+   ```
+   
+2. **Explanation**:
+   - **`AND R2, R2, #0xFFF`**: This instruction performs a bitwise AND between `R2` and `0xFFF` (binary `0000 1111 1111 1111`), which keeps only the lower 12 bits in `R2`.
+   - The result of this operation is the 12-bit ADC value in `R2`, with any higher bits cleared.
+
+3. **Why We Do This**:
+   - Masking with `0xFFF` ensures that only the 12 least significant bits (the ADC result) remain in `R2`, and any extraneous bits are cleared. This step isolates the ADC result.
+
+---
+
+### Complete Assembly Code
+
+Here’s the complete assembly code to read and extract the 12-bit ADC conversion result from `AD0GDR` after confirming that the conversion has completed:
+
+```assembly
+LDR R0, =0x4003C004       @ Load AD0GDR register address into R0
+LDR R1, [R0]              @ Load the current value of AD0GDR into R1
+MOV R2, R1, LSR #4        @ Shift right by 4 to align the 12-bit result
+AND R2, R2, #0xFFF        @ Mask to get the 12-bit ADC value in R2
+```
+
+### Explanation Recap
+
+1. **Load Address** (`LDR R0, =0x4003C004`): Loads the address of `AD0GDR` to access the conversion result.
+2. **Read AD0GDR Value** (`LDR R1, [R0]`): Loads the value of `AD0GDR` into `R1`, which includes the ADC result and status bits.
+3. **Align Result** (`MOV R2, R1, LSR #4`): Shifts the ADC result to bits 0-11 in `R2`.
+4. **Extract 12-bit Value** (`AND R2, R2, #0xFFF`): Masks out only the 12 least significant bits, giving the ADC result.
+
+### Summary
+
+After executing this code, the 12-bit ADC conversion result from `AD0.4` will be stored in `R2`. This value represents the digital equivalent of the analog input signal on `AD0.4` and is now ready for use in further processing.
+
+Let me know if you need further clarification or additional steps on this process!
