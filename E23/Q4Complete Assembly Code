@@ -1,0 +1,6 @@
+LDR R0, =0x4003C004        @ Load AD0GDR register address into R0
+
+wait_for_conversion:
+   LDR R1, [R0]             @ Load the current value of AD0GDR into R1
+   TST R1, #0x80000000      @ Test the DONE bit (bit 31)
+   BEQ wait_for_conversion  @ If DONE is not set, branch to wait_for_conversion
