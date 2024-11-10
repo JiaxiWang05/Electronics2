@@ -1,0 +1,11 @@
+Objective
+To activate the ADC on the LPC1768 microcontroller, we must set the PDN (Power Down) bit in the AD0CR register. This bit enables the ADC, allowing it to process analog signals.
+
+Register and Bit Information
+Register: AD0CR (ADC Control Register)
+Memory Address of AD0CR: 0x4003C000
+Bit to Set: 21 (PDN bit)
+The AD0CR register controls the ADC settings, including enabling or disabling it, selecting channels, configuring clock settings, and controlling when to start conversions. For this step, we’re specifically focused on bit 21 (PDN), which controls the operational state of the ADC.
+
+Step 1: Load the Address of the AD0CR Register into a Register
+LDR R0, =0x4003C000
