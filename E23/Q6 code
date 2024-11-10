@@ -1,0 +1,10 @@
+LDR R0, =0x4003C004       @ Load AD0GDR register address into R0
+LDR R1, [R0]              @ Load the current value of AD0GDR into R1
+MOV R2, R1, LSR #4        @ Shift right by 4 to align the 12-bit result
+AND R2, R2, #0xFFF        @ Mask to get the 12-bit ADC value in R2
+
+Explanation Recap
+Load Address (LDR R0, =0x4003C004): Loads the address of AD0GDR to access the conversion result.
+Read AD0GDR Value (LDR R1, [R0]): Loads the value of AD0GDR into R1, which includes the ADC result and status bits.
+Align Result (MOV R2, R1, LSR #4): Shifts the ADC result to bits 0-11 in R2.
+Extract 12-bit Value (AND R2, R2, #0xFFF): Masks out only the 12 least significant bits, giving the ADC result.
