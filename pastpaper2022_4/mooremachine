@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        svg {
+            background-color: white;
+            width: 1000px;
+            height: 800px;
+        }
+        .state {
+            fill: white;
+            stroke: black;
+            stroke-width: 2;
+        }
+        .arrow {
+            stroke: black;
+            stroke-width: 2;
+            fill: none;
+        }
+        .arrowhead {
+            fill: black;
+        }
+        text {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        .state-label {
+            font-weight: bold;
+        }
+        .transition-label {
+            font-size: 12px;
+        }
+        .output-label {
+            font-style: italic;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 1000 800">
+        <!-- States -->
+        <circle cx="500" cy="200" r="40" class="state"/>
+        <circle cx="300" cy="400" r="40" class="state"/>
+        <circle cx="700" cy="400" r="40" class="state"/>
+        <circle cx="500" cy="600" r="40" class="state"/>
+        
+        <!-- State Labels -->
+        <text x="500" y="195" text-anchor="middle" class="state-label">STOP</text>
+        <text x="500" y="210" text-anchor="middle" class="output-label">XY=00</text>
+        
+        <text x="300" y="395" text-anchor="middle" class="state-label">REVERSE</text>
+        <text x="300" y="410" text-anchor="middle" class="output-label">XY=01</text>
+        
+        <text x="700" y="395" text-anchor="middle" class="state-label">FORWARD</text>
+        <text x="700" y="410" text-anchor="middle" class="output-label">XY=10</text>
+        
+        <text x="500" y="595" text-anchor="middle" class="state-label">REV_TURN</text>
+        <text x="500" y="610" text-anchor="middle" class="output-label">XY=11</text>
+
+        <!-- Transitions from STOP -->
+        <path d="M 470,225 Q 350,300 320,360" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="370" y="300" class="transition-label">AB=01</text>
+
+        <path d="M 530,225 Q 650,300 680,360" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="630" y="300" class="transition-label">AB=10</text>
+
+        <path d="M 500,240 Q 500,400 500,560" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="520" y="400" class="transition-label">AB=11</text>
+
+        <!-- Self loops -->
+        <path d="M 480,170 Q 450,150 520,170" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="500" y="140" class="transition-label">AB=00</text>
+
+        <!-- REVERSE state transitions -->
+        <path d="M 270,370 Q 240,350 270,430" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="200" y="400" class="transition-label">AB=01/10/11</text>
+
+        <path d="M 330,370 Q 400,300 470,200" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="400" y="250" class="transition-label">AB=00</text>
+
+        <!-- FORWARD state transitions -->
+        <path d="M 730,370 Q 760,350 730,430" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="800" y="400" class="transition-label">AB=01/10/11</text>
+
+        <path d="M 670,370 Q 600,300 530,200" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="600" y="250" class="transition-label">AB=00</text>
+
+        <!-- REV_TURN state transitions -->
+        <path d="M 530,630 Q 560,650 470,630" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="500" y="680" class="transition-label">AB=01/10/11</text>
+
+        <path d="M 480,570 Q 450,400 480,240" class="arrow" marker-end="url(#arrowhead)"/>
+        <text x="420" y="400" class="transition-label">AB=00</text>
+
+        <!-- Arrowhead definition -->
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" class="arrowhead"/>
+            </marker>
+        </defs>
+    </svg>
+</body>
+</html>
